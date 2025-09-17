@@ -1,25 +1,175 @@
 import React from 'react';
+import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-
-
-const Card = () => {
+const RegularContent = () => {
   return (
-  <div style={{
-    border: '1px solid #e0e0e0',
-    borderRadius: '8px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-    overflow: 'hidden',
-    width: '300px',
-    background: '#fff'
-  }}>
-    <img
-      src={"https://images.unsplash.com/photo-1561037404-61cd46aa615b?q=80&w=870&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"}
-      alt={"Card image"}
-      style={{ width: '100%', height: '180px', objectFit: 'cover' }}
-    />
-    
-  </div>
-)
+    <View style={regularContentStyles.card}>
+      <Text style={regularContentStyles.text}>Regular content ✨</Text>
+    </View>
+  );
+};
+
+const regularContentStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: '#b6cff7',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    color: '#001a72',
+  },
+});
+
+const FlippedContent = () => {
+  return (
+    <View style={flippedContentStyles.card}>
+      <Text style={flippedContentStyles.text}>Flipped content 🚀</Text>
+    </View>
+  );
+};
+
+const flippedContentStyles = StyleSheet.create({
+  card: {
+    flex: 1,
+    backgroundColor: '#baeee5',
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    color: '#001a72',
+  },
+});
+
+type FlipCardProps = {
+  isFlipped: any;
+  cardStyle?: object;
+  direction?: 'x' | 'y';
+  duration?: number;
+  RegularContent: React.ReactNode;
+  FlippedContent: React.ReactNode;
+};
+
+const FlipCard = ({
+  isFlipped,
+  cardStyle,
+  direction = 'y',
+  duration = 500,
+  RegularContent,
+  FlippedContent,
+}: FlipCardProps) => {
+  const isDirectionX = direction === 'x';
+
+  const regularCardAnimatedStyle = useAnimatedStyle(() => {
+    const spinValue = interpolate(Number(isFlipped.value), [0, 1], [0, 180]);
+    const rotateValue = withTiming(`${spinValue}deg`, { duration });
+
+    return {
+      transform: [
+        isDirectionX ? { rotateX: rotateValue } : { rotateY: rotateValue },
+      ],
+    };
+  });
+
+  const flippedCardAnimatedStyle = useAnimatedStyle(() => {
+    const spinValue = interpolate(Number(isFlipped.value), [0, 1], [180, 360]);
+    const rotateValue = withTiming(`${spinValue}deg`, { duration });
+
+    return {
+      transform: [
+        isDirectionX ? { rotateX: rotateValue } : { rotateY: rotateValue },
+      ],
+    };
+  });
+
+  return (
+    <View>
+      <Animated.View
+        style={[
+          flipCardStyles.regularCard,
+          cardStyle,
+          regularCardAnimatedStyle,
+        ]}>
+        {RegularContent}
+      </Animated.View>
+      <Animated.View
+        style={[
+          flipCardStyles.flippedCard,
+          cardStyle,
+          flippedCardAnimatedStyle,
+        ]}>
+        {FlippedContent}
+      </Animated.View>
+    </View>
+  );
+};
+
+const flipCardStyles = StyleSheet.create({
+  regularCard: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+  flippedCard: {
+    zIndex: 2,
+  },
+});
+
+export default function App() {
+  const isFlipped = useSharedValue(false);
+
+  const handlePress = () => {
+    isFlipped.value = !isFlipped.value;
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <FlipCard
+        isFlipped={isFlipped}
+        cardStyle={styles.flipCard}
+        FlippedContent={<FlippedContent />}
+        RegularContent={<RegularContent />}
+      />
+      <View style={styles.buttonContainer}>
+        <Pressable style={styles.toggleButton} onPress={handlePress}>
+          <Text style={styles.toggleButtonText}>Toggle card</Text>
+        </Pressable>
+      </View>
+    </SafeAreaView>
+  );
 }
 
-export default Card;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    height: 300,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buttonContainer: {
+    marginTop: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  toggleButton: {
+    backgroundColor: '#b58df1',
+    padding: 12,
+    borderRadius: 48,
+  },
+  toggleButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+  flipCard: {
+    width: 170,
+    height: 200,
+    backfaceVisibility: 'hidden',
+  },
+});
