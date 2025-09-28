@@ -1,4 +1,4 @@
-import passport, { type Profile } from 'passport'
+import { type Profile } from 'passport'
 import { Strategy, type VerifyCallback } from 'passport-google-oauth20'
 
 async function verify(
