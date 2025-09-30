@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import passport from 'passport'
-import googleStrategy from '@/auth/googleStrategy.ts'
+import googleStrategy from '../auth/googleStrategy.ts'
 import jwt from 'jsonwebtoken'
 
 const router = Router()
