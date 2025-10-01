@@ -1,7 +1,7 @@
 import { Router } from 'express'
+import jwt from 'jsonwebtoken'
 import passport from 'passport'
 import googleStrategy from '../auth/googleStrategy.ts'
-import jwt from 'jsonwebtoken'
 
 const router = Router()
 
@@ -22,7 +22,13 @@ router.get(
       { expiresIn: '7d' }
     )
 
-    res.json({ token })
+    if (process.env.IS_DEV === 'true') {
+      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
+      return
+    }
+
+    // this doesn't work in expo go, but it will work in a standalone app
+    res.redirect(`dudulingo://auth/callback?token=${token}`)
   }
 )
 

@@ -2,11 +2,11 @@ import { Redirect } from "expo-router";
 import { useAuth } from "../hooks/use-auth";
 
 export default function Index() {
-  const { loading, firstTime } = useAuth();
+  const { loading, firstTime, isAuthenticated } = useAuth();
 
   if (loading) return null; 
 
-  if (firstTime) {
+  if (!isAuthenticated || firstTime) {
     return <Redirect href="/auth/sign-in" />;
   }
 
