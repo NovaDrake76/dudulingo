@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "node --env-file=.env --watch src/main.ts",
     "lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
-    "format": "prettier --write \"src/**/*.{ts,js,json,md}\""
+    "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
+		"db:seed": "tsx src/db/seed.ts",
+		"db:setup": "drizzle-kit push"
   },
   "dependencies": {
     "drizzle-orm": "^0.44.6",

@@ -10,8 +10,9 @@ const PORT = process.env.PORT || 8000
 const app = express()
 
 app.use(passport.initialize())
+app.use(express.json())
 
-app.use(authRouter)
+app.use('/auth', authRouter)
 app.use('/cards', cardsRouter)
 app.use('/decks', decksRouter)
 app.use('/review', reviewRouter)

@@ -8,10 +8,10 @@ import { eq } from 'drizzle-orm'
 
 const router = Router()
 
-router.get('/auth/google', passport.authenticate(googleStrategy, { scope: ['profile', 'email'] }))
+router.get('/google', passport.authenticate(googleStrategy, { scope: ['profile', 'email'] }))
 
 router.get(
-  '/auth/google/callback',
+  '/google/callback',
   passport.authenticate(googleStrategy, { session: false }),
   async (req, res) => {
     const user = req.user as any
@@ -44,8 +44,8 @@ router.get(
     )
 
     if (process.env.IS_DEV === 'true') {
-      // res.json(token)
-      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
+      res.json(token)
+      // res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
       return
     }
 
