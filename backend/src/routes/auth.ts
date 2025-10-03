@@ -2,6 +2,9 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import passport from 'passport'
 import googleStrategy from '../auth/googleStrategy.ts'
+import { db } from '../db/index.ts'
+import { users } from '../db/schema.ts'
+import { eq } from 'drizzle-orm'
 
 const router = Router()
 
@@ -10,19 +13,38 @@ router.get('/auth/google', passport.authenticate(googleStrategy, { scope: ['prof
 router.get(
   '/auth/google/callback',
   passport.authenticate(googleStrategy, { session: false }),
-  (req, res) => {
+  async (req, res) => {
     const user = req.user as any
+
+    const [dbUser] = await db
+      .insert(users)
+      .values({
+        providerId: user.id,
+        name: user.displayName,
+        photoUrl: user.photos?.[0]?.value || null,
+      })
+      .onConflictDoUpdate({
+        target: users.providerId,
+        set: {
+          name: user.displayName,
+          photoUrl: user.photos?.[0]?.value || null,
+          updatedAt: new Date(),
+        },
+      })
+      .returning()
+
     const token = jwt.sign(
       {
-        id: user.id,
-        email: user.email,
-        displayName: user.displayName,
+        id: dbUser.id,
+        name: dbUser.name,
+        providerId: dbUser.providerId,
       },
       process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     )
 
     if (process.env.IS_DEV === 'true') {
+      // res.json(token)
       res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
       return
     }
