@@ -6,6 +6,8 @@ import {
   uuid,
   uniqueIndex,
   primaryKey,
+  integer,
+  decimal,
   pgEnum,
 } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
@@ -84,8 +86,29 @@ export const deckCards = pgTable(
   })
 )
 
+export const userCardProgress = pgTable(
+  'user_card_progress',
+  {
+    userId: uuid('user_id')
+      .references(() => users.id)
+      .notNull(),
+    cardId: uuid('card_id')
+      .references(() => cards.id)
+      .notNull(),
+
+    easeFactor: decimal('ease_factor', { precision: 4, scale: 2 }).default('2.5').notNull(),
+    interval: integer('interval').default(0).notNull(),
+    repetitions: integer('repetitions').default(0).notNull(),
+    nextReviewAt: timestamp('next_review_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.cardId] }),
+  })
+)
+
 export const usersRelations = relations(users, ({ many }) => ({
   decks: many(decks),
+  cardProgress: many(userCardProgress),
 }))
 
 export const decksRelations = relations(decks, ({ one, many }) => ({
@@ -99,6 +122,7 @@ export const decksRelations = relations(decks, ({ one, many }) => ({
 export const cardsRelations = relations(cards, ({ many }) => ({
   contents: many(cardContents),
   deckCards: many(deckCards),
+  userProgress: many(userCardProgress),
 }))
 
 export const deckCardsRelations = relations(deckCards, ({ one }) => ({
@@ -115,6 +139,17 @@ export const deckCardsRelations = relations(deckCards, ({ one }) => ({
 export const cardContentsRelations = relations(cardContents, ({ one }) => ({
   card: one(cards, {
     fields: [cardContents.cardId],
+    references: [cards.id],
+  }),
+}))
+
+export const userCardProgressRelations = relations(userCardProgress, ({ one }) => ({
+  user: one(users, {
+    fields: [userCardProgress.userId],
+    references: [users.id],
+  }),
+  card: one(cards, {
+    fields: [userCardProgress.cardId],
     references: [cards.id],
   }),
 }))
