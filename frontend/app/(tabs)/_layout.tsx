@@ -6,11 +6,11 @@ export default function TabsLayout() {
   return (
     <Tabs screenOptions={{ headerShown: false }}>
       <Tabs.Screen
-        name="home"
+        name="learn"
         options={{
-          tabBarLabel: "Home",
+          tabBarLabel: "Learn",
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" size={size} color={color} />
+            <Ionicons name="book" size={size} color={color} />
           ),
         }}
       />
