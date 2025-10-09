@@ -1,3 +1,5 @@
+import 'react-native-gesture-handler';
+
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,11 +13,6 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
-SplashScreen.setOptions({
-  duration: 1000,
-  fade: true,
-})
-
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -27,16 +24,16 @@ export default function RootLayout() {
       setLoaded(true);
       SplashScreen.hideAsync();
     }
-  }
-  , [loaded]);
-
-
+  }, [loaded]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+        <Stack.Screen name="auth/select-language" options={{ title: 'Select Language' }} />
+        <Stack.Screen name="select-deck" options={{ title: 'Select Deck' }} />
+        <Stack.Screen name="review/[deckId]" options={{ title: 'Review' }} />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

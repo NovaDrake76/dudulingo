@@ -14,6 +14,7 @@ export default function SignIn() {
       router.replace('/(tabs)/learn')
     } else {
       alert('failed to login. please try again.')
+      router.replace('/auth/select-language')
     }
     setLoading(false)
   }
