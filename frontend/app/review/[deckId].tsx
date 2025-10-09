@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 
 // mock data for cards with different types and knowledge levels
 const mockCards = [
@@ -62,42 +62,47 @@ export default function ReviewDeck() {
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: '#0e0e0e' }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <View style={styles.container}>
-        <View style={styles.card}>
-          {currentCard.image && <Image source={
-{ uri: currentCard.image }
-          } style={styles.cardImage} />}
-          {currentCard.prompt && <Text style={styles.prompt}>{currentCard.prompt}</Text>}
-        </View>
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.container}>
+            <View style={styles.card}>
+              {currentCard.image && <Image source={
+    { uri: currentCard.image }
+              } style={styles.cardImage} />}
+              {currentCard.prompt && <Text style={styles.prompt}>{currentCard.prompt}</Text>}
+            </View>
 
-        {currentCard.type === 'multiple_choice' && (
-          <View style={styles.optionsContainer}>
-            {currentCard.options?.map((option) => (
-              <Pressable
-                key={option}
-                style={styles.optionButton}
-                onPress={() => handleAnswer(option)}>
-                <Text style={styles.optionText}>{option}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+            {currentCard.type === 'multiple_choice' && (
+              <View style={styles.optionsContainer}>
+                {currentCard.options?.map((option) => (
+                  <Pressable
+                    key={option}
+                    style={styles.optionButton}
+                    onPress={() => handleAnswer(option)}>
+                    <Text style={styles.optionText}>{option}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
 
-        {currentCard.type === 'type_answer' && (
-          <View style={styles.inputContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Type your answer"
-              placeholderTextColor="#888"
-              value={inputValue}
-              onChangeText={setInputValue}
-            />
-            <Pressable style={styles.checkButton} onPress={() => handleAnswer(inputValue)}>
-              <Text style={styles.checkButtonText}>Check</Text>
-            </Pressable>
+            {currentCard.type === 'type_answer' && (
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Type your answer"
+                  placeholderTextColor="#888"
+                  value={inputValue}
+                  onChangeText={setInputValue}
+                />
+                <Pressable style={styles.checkButton} onPress={() => handleAnswer(inputValue)}>
+                  <Text style={styles.checkButtonText}>Check</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
-        )}
-      </View>
+        </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -106,7 +111,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0e0e0e',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignItems: 'center',
     padding: 20,
   },
