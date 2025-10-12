@@ -62,8 +62,11 @@ router.get('/next', async (req, res) => {
     }
     const userId = user.id
 
-    // first try to get a card that's due for review
-    const nextDueProgress = await db.query.userCardProgress.findFirst({
+    let nextCard
+    let userProgress
+
+    // 1. Prioritize cards that are currently due
+    const dueCardProgress = await db.query.userCardProgress.findFirst({
       where: and(
         eq(userCardProgress.userId, userId),
         lte(userCardProgress.nextReviewAt, new Date())
@@ -71,18 +74,15 @@ router.get('/next', async (req, res) => {
       orderBy: (progress, { asc }) => [asc(progress.nextReviewAt)],
     })
 
-    let nextCard
-    let userProgress
-
-    if (nextDueProgress) {
-      userProgress = nextDueProgress
+    if (dueCardProgress) {
+      userProgress = dueCardProgress
       nextCard = await db.query.cards.findFirst({
-        where: eq(cards.id, nextDueProgress.cardId),
+        where: eq(cards.id, dueCardProgress.cardId),
         with: { contents: true, deckCards: { with: { deck: true } } },
       })
     } else {
-      // if no cards are due, get a new card the user hasn't seen
-      nextCard = await db.query.cards.findFirst({
+      // 2. If no cards are due, find a new, unseen card
+      const newCardResult = await db.query.cards.findFirst({
         with: {
           contents: true,
           deckCards: { with: { deck: true } },
@@ -98,14 +98,29 @@ router.get('/next', async (req, res) => {
           ),
       })
 
-      if (nextCard) {
+      if (newCardResult) {
+        nextCard = newCardResult
         userProgress = {
           userId,
-          cardId: nextCard.id,
+          cardId: newCardResult.id,
           easeFactor: '2.5',
           interval: 0,
           repetitions: 0,
           nextReviewAt: new Date(),
+        }
+      } else {
+        // 3. If no cards are due and no new cards, get the least recently reviewed card
+        const leastRecentProgress = await db.query.userCardProgress.findFirst({
+          where: eq(userCardProgress.userId, userId),
+          orderBy: (progress, { asc }) => [asc(progress.nextReviewAt)],
+        })
+
+        if (leastRecentProgress) {
+          userProgress = leastRecentProgress
+          nextCard = await db.query.cards.findFirst({
+            where: eq(cards.id, leastRecentProgress.cardId),
+            with: { contents: true, deckCards: { with: { deck: true } } },
+          })
         }
       }
     }
@@ -134,7 +149,7 @@ router.get('/next', async (req, res) => {
     }
 
     if (questionType.includes('translation')) {
-      questionData.translation = cardContent.prompt
+      questionData.prompt = cardContent.prompt
     }
 
     // add multiple choice options if needed

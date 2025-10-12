@@ -1,3 +1,4 @@
+import cors from 'cors'; // Import the cors middleware
 import express from 'express'
 import passport from 'passport'
 import authRouter from './routes/auth.ts'
@@ -9,6 +10,7 @@ import usersRouter from './routes/users.ts'
 const PORT = process.env.PORT || 8000
 const app = express()
 
+app.use(cors())
 app.use(passport.initialize())
 app.use(express.json())
 

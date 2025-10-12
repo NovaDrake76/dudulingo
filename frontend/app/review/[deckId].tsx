@@ -1,7 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router'
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 import { api } from '../../services/api'
+
 
 type QuestionData = {
   cardId: string
@@ -9,7 +16,7 @@ type QuestionData = {
   correctAnswer: string
   imageUrl?: string
   word?: string
-  translation?: string
+  prompt?: string // This is the translation
   options?: string[] | { text: string; imageUrl: string }[]
 }
 
@@ -23,22 +30,50 @@ export default function Review() {
   const [loading, setLoading] = useState(true)
   const [cardsReviewed, setCardsReviewed] = useState(0)
 
+  const flipAnimation = useSharedValue(0)
+
+  const frontAnimatedStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipAnimation.value, [0, 1], [0, 180])
+    return {
+      transform: [{ rotateY: `${spin}deg` }],
+    }
+  })
+
+  const backAnimatedStyle = useAnimatedStyle(() => {
+    const spin = interpolate(flipAnimation.value, [0, 1], [180, 360])
+    return {
+      transform: [{ rotateY: `${spin}deg` }],
+    }
+  })
+
   const loadNextQuestion = async () => {
     setLoading(true)
     setShowResult(false)
     setSelectedAnswer('')
     setTypedAnswer('')
+    setIsCorrect(false)
+    setCurrentQuestion(null)
+    flipAnimation.value = 0
 
     try {
-      const questionData = await api.getNextReviewCard()
-      if (questionData.message) {
+      // Use 'general' if deckId is not specified
+      const questionData = deckId === 'general'
+        ? await api.getNextReviewCard()
+        : await api.getDeckReviewSession(deckId as string);
+
+
+      if (questionData.message || (deckId !== 'general' && questionData.cardsInSession === 0)) {
         // no more cards
         router.back()
         return
       }
-      setCurrentQuestion(questionData)
+      
+      const question = deckId === 'general' ? questionData : questionData.cards[cardsReviewed]
+
+      setCurrentQuestion(question)
     } catch (error) {
       console.error('Failed to load question:', error)
+      router.back()
     } finally {
       setLoading(false)
     }
@@ -48,142 +83,154 @@ export default function Review() {
     loadNextQuestion()
   }, [])
 
-  const handleAnswer = () => {
+  const checkAnswer = (answer: string) => {
     if (!currentQuestion) return
-
-    let userAnswer = ''
-    
-    if (currentQuestion.questionType.includes('type_answer')) {
-      userAnswer = typedAnswer.trim().toLowerCase()
-    } else {
-      userAnswer = selectedAnswer
-    }
-
-    const correct = userAnswer === currentQuestion.correctAnswer.toLowerCase()
-    setIsCorrect(correct)
+    const isAnswerCorrect = answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase()
+    setIsCorrect(isAnswerCorrect)
     setShowResult(true)
+
+    if (!isAnswerCorrect) {
+      flipAnimation.value = withTiming(1, { duration: 500 })
+    }
+  }
+
+  const handleSelectOption = (option: string) => {
+    if (showResult) return
+    setSelectedAnswer(option)
+    checkAnswer(option)
+  }
+
+  const handleCheckTypedAnswer = () => {
+    if (showResult) return
+    checkAnswer(typedAnswer)
   }
 
   const handleNext = async () => {
     if (!currentQuestion) return
-
-    // submit the answer with rating (5 = correct, 0 = incorrect)
-    const rating = isCorrect ? 5 : 0
+    const rating = isCorrect ? 'easy' : 'hard'
     
     try {
-      await api.submitReview(currentQuestion.cardId, rating)
+      await api.submitReview(currentQuestion.cardId, rating as any)
       setCardsReviewed(prev => prev + 1)
-      
-      // load next question
       loadNextQuestion()
     } catch (error) {
       console.error('Failed to submit review:', error)
     }
   }
 
-  const renderQuestion = () => {
+  const getOptionStyle = (optionText: string) => {
+    if (!showResult) return {}
+
+    const isCorrectAnswer = optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase()
+    const isSelectedAnswer = optionText === selectedAnswer
+
+    if (isCorrectAnswer) return styles.correctOption
+    if (isSelectedAnswer && !isCorrect) return styles.wrongOption
+    
+    return styles.disabledOption
+  }
+
+  const renderQuestionContent = () => {
     if (!currentQuestion) return null
-
-    const { questionType, imageUrl, word, translation, options } = currentQuestion
-
+    const { questionType, imageUrl, word, prompt } = currentQuestion
     return (
-      <View style={styles.questionContainer}>
-        {/* Show image if question type includes image */}
-        {questionType.includes('image') && imageUrl && (
-          <Image source={{ uri: imageUrl }} style={styles.questionImage} />
-        )}
+      <>
+        <Text style={styles.questionTitle}>
+          {questionType.includes('image_type_answer') ? 'What is this in English?' : 'Translate this word:'}
+        </Text>
+        {imageUrl && !questionType.includes('word_multiple_choice_image') && <Image source={{ uri: imageUrl }} style={styles.questionImage} />}
+        {word && <Text style={styles.questionWord}>{word}</Text>}
+        {prompt && !questionType.includes('image_word_multiple_choice') && <Text style={styles.questionTranslation}>{prompt}</Text>}
+      </>
+    )
+  }
 
-        {/* Show word if needed */}
-        {questionType.includes('word') && word && !questionType.includes('image_word') && (
-          <Text style={styles.questionWord}>{word}</Text>
-        )}
-
-        {/* Show translation if needed */}
-        {questionType.includes('translation') && translation && (
-          <Text style={styles.questionTranslation}>{translation}</Text>
-        )}
-
-        {/* Multiple choice options */}
-        {questionType.includes('multiple_choice') && options && (
-          <View style={styles.optionsContainer}>
-            {options.map((option, index) => {
-              const isImageOption = typeof option === 'object' && 'imageUrl' in option
-              const optionText = isImageOption ? option.text : option
-              const optionImage = isImageOption ? option.imageUrl : null
-
-              return (
-                <Pressable
-                  key={index}
-                  style={[
-                    styles.optionButton,
-                    selectedAnswer === optionText && styles.selectedOption,
-                  ]}
-                  onPress={() => setSelectedAnswer(optionText)}
-                  disabled={showResult}
-                >
-                  {optionImage && (
-                    <Image source={{ uri: optionImage }} style={styles.optionImage} />
-                  )}
-                  <Text style={styles.optionText}>{optionText}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
-        )}
-
-        {/* Type answer input */}
-        {questionType.includes('type_answer') && (
-          <TextInput
-            style={styles.input}
-            placeholder="Type your answer..."
-            placeholderTextColor="#888"
-            value={typedAnswer}
-            onChangeText={setTypedAnswer}
-            editable={!showResult}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        )}
+  const renderFeedbackContent = () => {
+    if (!currentQuestion) return null
+    return (
+      <View style={styles.feedbackCard}>
+        <Text style={styles.feedbackTitle}>Correct Answer:</Text>
+        {currentQuestion.imageUrl && <Image source={{ uri: currentQuestion.imageUrl }} style={styles.feedbackImage} />}
+        <Text style={styles.feedbackWord}>{currentQuestion.correctAnswer}</Text>
+        <Text style={styles.feedbackTranslation}>{currentQuestion.prompt}</Text>
       </View>
     )
   }
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#58cc02" />
       </View>
     )
   }
 
+  const { questionType, options } = currentQuestion || {}
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.progressText}>Cards reviewed: {cardsReviewed}</Text>
-      </View>
-
-      {renderQuestion()}
-
-      {showResult && (
-        <View style={[styles.resultContainer, isCorrect ? styles.correctResult : styles.wrongResult]}>
-          <Text style={styles.resultText}>
-            {isCorrect ? '✓ Correct!' : '✗ Wrong!'}
-          </Text>
-          <Text style={styles.correctAnswerText}>
-            Correct answer: {currentQuestion?.correctAnswer}
-          </Text>
+        <View style={styles.header}>
+            <Text style={styles.progressText}>Cards reviewed: {cardsReviewed}</Text>
         </View>
-      )}
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View>
+            <Animated.View style={[styles.card, styles.cardFront, frontAnimatedStyle]}>
+              {renderQuestionContent()}
+            </Animated.View>
+            <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
+              {renderFeedbackContent()}
+            </Animated.View>
+          </View>
 
-      {!showResult ? (
-        <Pressable style={styles.submitButton} onPress={handleAnswer}>
-          <Text style={styles.submitButtonText}>Check Answer</Text>
-        </Pressable>
-      ) : (
-        <Pressable style={styles.nextButton} onPress={handleNext}>
-          <Text style={styles.nextButtonText}>Next</Text>
-        </Pressable>
-      )}
+          {questionType?.includes('multiple_choice') && options && (
+            <View style={styles.optionsContainer}>
+              {options.map((option, index) => {
+                const isImageOption = typeof option === 'object' && 'imageUrl' in option
+                const optionText = isImageOption ? option.text : (option as string)
+                const optionImage = isImageOption ? option.imageUrl : null
+
+                return (
+                  <Pressable
+                    key={index}
+                    style={[styles.optionButton, getOptionStyle(optionText)]}
+                    onPress={() => handleSelectOption(optionText)}
+                    disabled={showResult}
+                  >
+                    {optionImage && <Image source={{ uri: optionImage }} style={styles.optionImage} />}
+                    <Text style={styles.optionText}>{optionText}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          )}
+
+          {questionType?.includes('type_answer') && (
+            <TextInput
+              style={styles.input}
+              placeholder="Type your answer"
+              placeholderTextColor="#777"
+              value={typedAnswer}
+              onChangeText={setTypedAnswer}
+              editable={!showResult}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          )}
+        </ScrollView>
+        <View style={styles.footer}>
+            {showResult ? (
+              <Pressable 
+                style={[styles.footerButton, isCorrect ? styles.correctButton : styles.wrongButton]} 
+                onPress={handleNext}
+              >
+                <Text style={styles.footerButtonText}>Next</Text>
+              </Pressable>
+            ) : questionType?.includes('type_answer') && (
+              <Pressable style={styles.footerButton} onPress={handleCheckTypedAnswer}>
+                <Text style={styles.footerButtonText}>Check Answer</Text>
+              </Pressable>
+            )}
+        </View>
     </View>
   )
 }
@@ -192,38 +239,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0e0e0e',
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
-  header: {
-    marginTop: 40,
-    marginBottom: 20,
-  },
-  progressText: {
-    color: '#fff',
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  questionContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#0e0e0e',
+  },
+  header: {
+    paddingTop: 40,
+    paddingBottom: 10,
+    alignItems: 'center',
+  },
+  progressText: {
+    color: '#aaa',
+    fontSize: 16,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
+  card: {
+    width: '100%',
+    minHeight: 300,
+    backgroundColor: '#1f1f1f',
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backfaceVisibility: 'hidden',
+  },
+  cardFront: {
+    
+  },
+  cardBack: {
+    position: 'absolute',
+    top: 0,
+  },
+  questionContainer: {
+    alignItems: 'center',
+    paddingBottom: 20,
+  },
+  questionTitle: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 24,
+    textAlign: 'center',
   },
   questionImage: {
-    width: 250,
-    height: 250,
-    borderRadius: 12,
-    marginBottom: 30,
+    width: 200,
+    height: 200,
+    borderRadius: 16,
+    marginBottom: 20,
   },
   questionWord: {
-    fontSize: 32,
+    fontSize: 40,
     fontWeight: 'bold',
     color: '#fff',
-    marginBottom: 30,
+    marginBottom: 10,
   },
   questionTranslation: {
     fontSize: 24,
     color: '#ccc',
     marginBottom: 30,
+    fontStyle: 'italic',
   },
   optionsContainer: {
     width: '100%',
@@ -236,15 +318,25 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#333',
   },
-  selectedOption: {
-    backgroundColor: '#58cc02',
+  correctOption: {
+    backgroundColor: 'rgba(88, 204, 2, 0.2)',
+    borderColor: '#58cc02',
+  },
+  wrongOption: {
+    backgroundColor: 'rgba(255, 75, 75, 0.2)',
+    borderColor: '#ff4b4b',
+  },
+  disabledOption: {
+    opacity: 0.5,
   },
   optionImage: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: 8,
-    marginRight: 12,
+    marginRight: 16,
   },
   optionText: {
     color: '#fff',
@@ -256,53 +348,58 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f1f1f',
     color: '#fff',
     fontSize: 18,
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 20,
-  },
-  resultContainer: {
     padding: 20,
     borderRadius: 12,
-    marginBottom: 20,
+    textAlign: 'center',
+    marginTop: 20,
+    borderWidth: 2,
+    borderColor: '#333',
   },
-  correctResult: {
+  footer: {
+    paddingVertical: 10,
+    minHeight: 80,
+  },
+  footerButton: {
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
     backgroundColor: '#58cc02',
   },
-  wrongResult: {
+  footerButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  correctButton: {
+    backgroundColor: '#58cc02',
+  },
+  wrongButton: {
     backgroundColor: '#ff4b4b',
   },
-  resultText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  feedbackCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    height: '100%'
   },
-  correctAnswerText: {
-    color: '#fff',
+  feedbackTitle: {
+    color: '#aaa',
     fontSize: 16,
-    textAlign: 'center',
-    marginTop: 8,
+    marginBottom: 16,
   },
-  submitButton: {
-    backgroundColor: '#58cc02',
+  feedbackImage: {
+    width: 100,
+    height: 100,
     borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
+    marginBottom: 12,
   },
-  submitButtonText: {
+  feedbackWord: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: 'bold',
   },
-  nextButton: {
-    backgroundColor: '#1cb0f6',
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  nextButtonText: {
-    color: '#fff',
+  feedbackTranslation: {
+    color: '#ccc',
     fontSize: 18,
-    fontWeight: 'bold',
   },
 })

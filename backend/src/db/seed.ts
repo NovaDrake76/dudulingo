@@ -1,7 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
-import * as schema from './schema.ts'
 import { seed } from './fixtures.ts'
+import * as schema from './schema.ts'
 
 async function main() {
   const pool = new Pool({
