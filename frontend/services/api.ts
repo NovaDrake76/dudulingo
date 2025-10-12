@@ -23,6 +23,8 @@ const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) =
   })
 
   if (!response.ok) {
+    const errorBody = await response.text();
+    console.error("API Error Response:", errorBody);
     throw new Error(`API error: ${response.statusText}`)
   }
 
@@ -74,15 +76,15 @@ export const api = {
   },
 
   // review endpoints
-  async getNextReviewCard() {
-    return authenticatedFetch('/review/next')
+  async getGeneralReviewSession() {
+    return authenticatedFetch('/review/session/general')
   },
 
   async getDeckReviewSession(deckId: string) {
     return authenticatedFetch(`/review/deck/${deckId}`)
   },
 
-  async submitReview(cardId: string, rating: number) {
+  async submitReview(cardId: string, rating: string) {
     return authenticatedFetch('/review', {
       method: 'POST',
       body: JSON.stringify({ cardId, rating }),

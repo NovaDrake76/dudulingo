@@ -5,10 +5,10 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { api } from '../services/api'
 
 type Deck = {
-  id: string
+  _id: string 
   name: string
   description: string
-  deckCards: any[]
+  cardCount: number
 }
 
 export default function SelectDeck() {
@@ -56,14 +56,14 @@ export default function SelectDeck() {
       <ScrollView contentContainerStyle={styles.decksContainer}>
         {decks.map((deck) => (
           <Pressable
-            key={deck.id}
+            key={deck._id}
             style={styles.deckButton}
-            onPress={() => handleSelectDeck(deck.id)}>
+            onPress={() => handleSelectDeck(deck._id)}>
             <View style={styles.deckInfo}>
               <Text style={styles.deckTitle}>{deck.name}</Text>
               <Text style={styles.deckDescription}>{deck.description}</Text>
               <Text style={styles.deckWordCount}>
-                {deck.deckCards?.length || 0} cards
+                {deck.cardCount || 0} cards
               </Text>
             </View>
           </Pressable>

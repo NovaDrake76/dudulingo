@@ -1,46 +1,31 @@
 import { Router } from 'express'
-import { db } from '../db/index.ts'
-import { cards, cardContents, deckCards } from '../db/schema.ts'
-import { eq } from 'drizzle-orm'
-import { alias } from 'drizzle-orm/pg-core'
+import { Card, Deck } from '../db/schema.ts'
 
 const router = Router()
 
+// create a new card
 router.post('/', async (req, res) => {
   try {
-    const { type, prompt, answer, options, deckId } = req.body
+    const { type, prompt, answer, imageUrl, lang, level, deckId } = req.body
 
-    if (!type || !prompt || !answer) {
-      return res.status(400).json({ error: 'type, prompt, and answer are required' })
+    if (!type || !answer) {
+      return res.status(400).json({ error: 'Type and answer are required' })
     }
 
-    const newCard = await db.transaction(async (tx) => {
-      const [card] = await tx.insert(cards).values({ type }).returning()
-
-      await tx.insert(cardContents).values({
-        cardId: card.id,
-        prompt,
-        answer,
-        options: options ? JSON.stringify(options) : null,
-      })
-
-      if (deckId) {
-        await tx.insert(deckCards).values({
-          deckId,
-          cardId: card.id,
-        })
-      }
-
-      const result = await tx.query.cards.findFirst({
-        where: eq(cards.id, card.id),
-        with: {
-          contents: true,
-          deckCards: { with: { deck: true } },
-        },
-      })
-
-      return result
+    const newCard = new Card({
+      type,
+      prompt,
+      answer,
+      imageUrl,
+      lang,
+      level,
     })
+
+    await newCard.save()
+
+    if (deckId) {
+      await Deck.findByIdAndUpdate(deckId, { $addToSet: { cards: newCard._id } })
+    }
 
     res.status(201).json(newCard)
   } catch (err) {
@@ -49,18 +34,10 @@ router.post('/', async (req, res) => {
   }
 })
 
+// Get all cards
 router.get('/', async (_req, res) => {
   try {
-    const allCards = await db.query.cards.findMany({
-      with: {
-        contents: true,
-        deckCards: {
-          with: {
-            deck: true,
-          },
-        },
-      },
-    })
+    const allCards = await Card.find()
     res.json(allCards)
   } catch (err) {
     console.error(err)
@@ -71,18 +48,7 @@ router.get('/', async (_req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
-
-    const card = await db.query.cards.findFirst({
-      where: (c, { eq }) => eq(c.id, id),
-      with: {
-        contents: true,
-        deckCards: {
-          with: {
-            deck: true,
-          },
-        },
-      },
-    })
+    const card = await Card.findById(id)
 
     if (!card) {
       return res.status(404).json({ error: 'Card not found' })
@@ -97,26 +63,17 @@ router.get('/:id', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const { prompt, answer, options } = req.body
+    const { prompt, answer, imageUrl, lang } = req.body
 
-    const [updatedContent] = await db
-      .update(cardContents)
-      .set({
-        prompt,
-        answer,
-        options: options ? JSON.stringify(options) : null,
-      })
-      .where(eq(cardContents.cardId, id))
-      .returning()
+    const updatedCard = await Card.findByIdAndUpdate(
+      id,
+      { prompt, answer, imageUrl, lang },
+      { new: true }
+    )
 
-    if (!updatedContent) {
-      return res.status(404).json({ error: 'Card or its content not found' })
+    if (!updatedCard) {
+      return res.status(404).json({ error: 'Card not found' })
     }
-
-    const updatedCard = await db.query.cards.findFirst({
-      where: eq(cards.id, id),
-      with: { contents: true, deckCards: { with: { deck: true } } },
-    })
 
     res.json(updatedCard)
   } catch (err) {
@@ -129,15 +86,14 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
 
-    const [deleted] = await db.transaction(async (tx) => {
-      await tx.delete(deckCards).where(eq(deckCards.cardId, id))
-      await tx.delete(cardContents).where(eq(cardContents.cardId, id))
-      return tx.delete(cards).where(eq(cards.id, id)).returning()
-    })
+    const deletedCard = await Card.findByIdAndDelete(id)
 
-    if (!deleted) {
+    if (!deletedCard) {
       return res.status(404).json({ error: 'Card not found' })
     }
+
+    // also remove the card reference from any decks
+    await Deck.updateMany({ cards: id }, { $pull: { cards: id } })
 
     res.status(204).send()
   } catch (err) {

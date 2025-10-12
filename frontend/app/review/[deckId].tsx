@@ -1,152 +1,166 @@
-import { router, useLocalSearchParams } from 'expo-router'
-import { useEffect, useState } from 'react'
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native'
+import { router, useLocalSearchParams } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, {
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-} from 'react-native-reanimated'
-import { api } from '../../services/api'
-
+} from 'react-native-reanimated';
+import { api } from '../../services/api';
 
 type QuestionData = {
-  cardId: string
-  questionType: string
-  correctAnswer: string
-  imageUrl?: string
-  word?: string
-  prompt?: string // This is the translation
-  options?: string[] | { text: string; imageUrl: string }[]
-}
+  cardId: string;
+  questionType: string;
+  correctAnswer: string;
+  imageUrl?: string;
+  word?: string;
+  prompt?: string;
+  options?: string[] | { text: string; imageUrl: string }[];
+};
 
 export default function Review() {
-  const { deckId } = useLocalSearchParams()
-  const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null)
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('')
-  const [typedAnswer, setTypedAnswer] = useState<string>('')
-  const [showResult, setShowResult] = useState(false)
-  const [isCorrect, setIsCorrect] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [cardsReviewed, setCardsReviewed] = useState(0)
+  const { deckId } = useLocalSearchParams();
+  
+  const [sessionCards, setSessionCards] = useState<QuestionData[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
+  const [typedAnswer, setTypedAnswer] = useState<string>('');
+  const [showResult, setShowResult] = useState(false);
+  const [isCorrect, setIsCorrect] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const flipAnimation = useSharedValue(0)
+  const flipAnimation = useSharedValue(0);
+
+  const currentQuestion = sessionCards[currentQuestionIndex];
 
   const frontAnimatedStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipAnimation.value, [0, 1], [0, 180])
+    const spin = interpolate(flipAnimation.value, [0, 1], [0, 180]);
     return {
       transform: [{ rotateY: `${spin}deg` }],
-    }
-  })
+    };
+  });
 
   const backAnimatedStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipAnimation.value, [0, 1], [180, 360])
+    const spin = interpolate(flipAnimation.value, [0, 1], [180, 360]);
     return {
       transform: [{ rotateY: `${spin}deg` }],
-    }
-  })
-
-  const loadNextQuestion = async () => {
-    setLoading(true)
-    setShowResult(false)
-    setSelectedAnswer('')
-    setTypedAnswer('')
-    setIsCorrect(false)
-    setCurrentQuestion(null)
-    flipAnimation.value = 0
-
-    try {
-      // Use 'general' if deckId is not specified
-      const questionData = deckId === 'general'
-        ? await api.getNextReviewCard()
-        : await api.getDeckReviewSession(deckId as string);
-
-
-      if (questionData.message || (deckId !== 'general' && questionData.cardsInSession === 0)) {
-        // no more cards
-        router.back()
-        return
-      }
-      
-      const question = deckId === 'general' ? questionData : questionData.cards[cardsReviewed]
-
-      setCurrentQuestion(question)
-    } catch (error) {
-      console.error('Failed to load question:', error)
-      router.back()
-    } finally {
-      setLoading(false)
-    }
-  }
+    };
+  });
 
   useEffect(() => {
-    loadNextQuestion()
-  }, [])
+    const startSession = async () => {
+      setLoading(true);
+      try {
+        const sessionData = deckId === 'general'
+          ? await api.getGeneralReviewSession()
+          : await api.getDeckReviewSession(deckId as string);
+
+        if (sessionData.cards && sessionData.cards.length > 0) {
+          setSessionCards(sessionData.cards);
+        } else {
+          Alert.alert("All done!", "You have no cards to review at the moment.", [{ text: "OK", onPress: () => router.back() }]);
+        }
+      } catch (error) {
+        console.error('Failed to start session:', error);
+        Alert.alert("Error", "Could not start the review session.", [{ text: "OK", onPress: () => router.back() }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    startSession();
+  }, [deckId]);
+
 
   const checkAnswer = (answer: string) => {
-    if (!currentQuestion) return
-    const isAnswerCorrect = answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase()
-    setIsCorrect(isAnswerCorrect)
-    setShowResult(true)
+    if (!currentQuestion) return;
+    const isAnswerCorrect = answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    setIsCorrect(isAnswerCorrect);
+    setShowResult(true);
 
     if (!isAnswerCorrect) {
-      flipAnimation.value = withTiming(1, { duration: 500 })
+      flipAnimation.value = withTiming(1, { duration: 500 });
     }
-  }
+  };
 
   const handleSelectOption = (option: string) => {
-    if (showResult) return
-    setSelectedAnswer(option)
-    checkAnswer(option)
-  }
-
+    if (showResult) return;
+    setSelectedAnswer(option);
+    checkAnswer(option);
+  };
+  
   const handleCheckTypedAnswer = () => {
-    if (showResult) return
-    checkAnswer(typedAnswer)
-  }
+    if (showResult) return;
+    checkAnswer(typedAnswer);
+  };
+
 
   const handleNext = async () => {
-    if (!currentQuestion) return
-    const rating = isCorrect ? 'easy' : 'hard'
+    if (!currentQuestion) return;
+
+    const rating = isCorrect ? 'easy' : 'very_hard';
     
     try {
-      await api.submitReview(currentQuestion.cardId, rating as any)
-      setCardsReviewed(prev => prev + 1)
-      loadNextQuestion()
+      await api.submitReview(currentQuestion.cardId, rating);
+      
+      const nextIndex = currentQuestionIndex + 1;
+        
+      if (nextIndex < sessionCards.length) {
+          setCurrentQuestionIndex(nextIndex);
+      } else {
+          router.back();
+          return;
+      }
+      
+      setShowResult(false);
+      setSelectedAnswer('');
+      setTypedAnswer('');
+      setIsCorrect(false);
+      flipAnimation.value = 0;
+
     } catch (error) {
-      console.error('Failed to submit review:', error)
+      console.error('Failed to submit review:', error);
+      Alert.alert('Error', 'Could not save your progress. Please try again.');
     }
-  }
+  };
 
   const getOptionStyle = (optionText: string) => {
-    if (!showResult) return {}
+    if (!showResult) return {};
 
-    const isCorrectAnswer = optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase()
-    const isSelectedAnswer = optionText === selectedAnswer
+    const isCorrectAnswer = optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase();
+    const isSelectedAnswer = optionText === selectedAnswer;
 
-    if (isCorrectAnswer) return styles.correctOption
-    if (isSelectedAnswer && !isCorrect) return styles.wrongOption
+    if (isCorrectAnswer) return styles.correctOption;
+    if (isSelectedAnswer && !isCorrect) return styles.wrongOption;
     
-    return styles.disabledOption
-  }
+    return styles.disabledOption;
+  };
 
   const renderQuestionContent = () => {
-    if (!currentQuestion) return null
-    const { questionType, imageUrl, word, prompt } = currentQuestion
+    if (!currentQuestion) return null;
+    const { questionType, imageUrl, word, prompt } = currentQuestion;
+    
+    let title = 'Translate this word:';
+    if (questionType?.includes('image_type_answer')) {
+      title = 'What is this in English?';
+    } else if (questionType?.includes('image')) {
+      title = 'What is this?';
+    }
+
+
     return (
-      <>
-        <Text style={styles.questionTitle}>
-          {questionType.includes('image_type_answer') ? 'What is this in English?' : 'Translate this word:'}
-        </Text>
+      <View style={styles.questionContentContainer}>
+        <Text style={styles.questionTitle}>{title}</Text>
         {imageUrl && !questionType.includes('word_multiple_choice_image') && <Image source={{ uri: imageUrl }} style={styles.questionImage} />}
         {word && <Text style={styles.questionWord}>{word}</Text>}
         {prompt && !questionType.includes('image_word_multiple_choice') && <Text style={styles.questionTranslation}>{prompt}</Text>}
-      </>
-    )
-  }
+      </View>
+    );
+  };
 
   const renderFeedbackContent = () => {
-    if (!currentQuestion) return null
+    if (!currentQuestion) return null;
     return (
       <View style={styles.feedbackCard}>
         <Text style={styles.feedbackTitle}>Correct Answer:</Text>
@@ -154,23 +168,23 @@ export default function Review() {
         <Text style={styles.feedbackWord}>{currentQuestion.correctAnswer}</Text>
         <Text style={styles.feedbackTranslation}>{currentQuestion.prompt}</Text>
       </View>
-    )
-  }
+    );
+  };
 
-  if (loading) {
+  if (loading || !currentQuestion) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#58cc02" />
       </View>
-    )
+    );
   }
 
-  const { questionType, options } = currentQuestion || {}
+  const { questionType, options } = currentQuestion;
 
   return (
     <View style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.progressText}>Cards reviewed: {cardsReviewed}</Text>
+            <Text style={styles.progressText}>Card {currentQuestionIndex + 1} of {sessionCards.length}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View>
@@ -185,9 +199,9 @@ export default function Review() {
           {questionType?.includes('multiple_choice') && options && (
             <View style={styles.optionsContainer}>
               {options.map((option, index) => {
-                const isImageOption = typeof option === 'object' && 'imageUrl' in option
-                const optionText = isImageOption ? option.text : (option as string)
-                const optionImage = isImageOption ? option.imageUrl : null
+                const isImageOption = typeof option === 'object' && 'imageUrl' in option;
+                const optionText = isImageOption ? option.text : (option as string);
+                const optionImage = isImageOption ? option.imageUrl : null;
 
                 return (
                   <Pressable
@@ -199,7 +213,7 @@ export default function Review() {
                     {optionImage && <Image source={{ uri: optionImage }} style={styles.optionImage} />}
                     <Text style={styles.optionText}>{optionText}</Text>
                   </Pressable>
-                )
+                );
               })}
             </View>
           )}
@@ -232,7 +246,7 @@ export default function Review() {
             )}
         </View>
     </View>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
@@ -271,16 +285,13 @@ const styles = StyleSheet.create({
     padding: 20,
     backfaceVisibility: 'hidden',
   },
-  cardFront: {
-    
-  },
+  cardFront: {},
   cardBack: {
     position: 'absolute',
     top: 0,
   },
-  questionContainer: {
+  questionContentContainer: {
     alignItems: 'center',
-    paddingBottom: 20,
   },
   questionTitle: {
     color: '#fff',
@@ -402,4 +413,4 @@ const styles = StyleSheet.create({
     color: '#ccc',
     fontSize: 18,
   },
-})
+});

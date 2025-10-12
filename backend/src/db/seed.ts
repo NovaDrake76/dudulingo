@@ -1,23 +1,38 @@
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { Pool } from 'pg'
-import { seed } from './fixtures.ts'
-import * as schema from './schema.ts'
+import mongoose from 'mongoose'
+import { cards, decks, users } from './fixtures.ts'
+import connectDB from './index.ts'
+import { Card, Deck, User, UserCardProgress } from './schema.ts'
 
-async function main() {
-  const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-  })
+const seedDatabase = async () => {
+  try {
+    await connectDB()
 
-  const db = drizzle(pool, { schema })
+    console.log('Clearing existing data...')
+    await User.deleteMany({})
+    await Deck.deleteMany({})
+    await Card.deleteMany({})
+    await UserCardProgress.deleteMany({})
 
-  await seed(db)
+    console.log('Inserting users...')
+    const createdUsers = await User.insertMany(users)
 
-  console.log('Database has been seeded successfully.')
-  await pool.end()
-  process.exit(0)
+    console.log('Inserting cards...')
+    const createdCards = await Card.insertMany(cards)
+
+    console.log('Inserting decks...')
+    const decksToCreate = decks.map((deck) => ({
+      ...deck,
+      ownerId: createdUsers[0]._id, 
+      cards: createdCards.map((c) => c._id), 
+    }))
+    await Deck.insertMany(decksToCreate)
+
+    console.log('Database has been seeded successfully.')
+  } catch (error) {
+    console.error('Error seeding database:', error)
+  } finally {
+    await mongoose.connection.close()
+  }
 }
 
-main().catch((err) => {
-  console.error('Error seeding database:', err)
-  process.exit(1)
-})
+seedDatabase()

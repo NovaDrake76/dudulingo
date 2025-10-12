@@ -1,21 +1,14 @@
-import { Strategy as JwtStrategy, ExtractJwt, type VerifyCallback } from 'passport-jwt'
-import { db } from '../db/index.ts'
-import { users } from '../db/schema.ts'
-import { eq } from 'drizzle-orm'
+import { ExtractJwt, Strategy as JwtStrategy, type VerifyCallback } from 'passport-jwt'
+import { User } from '../db/schema.ts'
 
 const verify: VerifyCallback = async (payload, done) => {
   try {
-    const user = await db.query.users.findFirst({
-      where: eq(users.id, payload.id),
-    })
-    console.log({ payload })
-    console.log({ user })
-
-    if (!user) {
-      return res.status(401).json({ error: 'Unauthorized' })
+    // use findOne with _id to avoid casting to ObjectId
+    const user = await User.findOne({ _id: payload.id })
+    if (user) {
+      return done(null, user)
     }
-
-    return done(null, user)
+    return done(null, false)
   } catch (err) {
     return done(err, false)
   }

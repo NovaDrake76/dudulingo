@@ -1,10 +1,9 @@
 import { Router } from 'express'
-import { db } from '../db/index.ts'
-import { decks } from '../db/schema.ts'
-import { eq } from 'drizzle-orm'
+import { Deck } from '../db/schema.ts'
 
 const router = Router()
 
+// create a new deck
 router.post('/', async (req, res) => {
   try {
     const { name, description, ownerId } = req.body
@@ -13,16 +12,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Name and ownerId are required' })
     }
 
-    const [deck] = await db
-      .insert(decks)
-      .values({
-        name,
-        description,
-        ownerId,
-      })
-      .returning()
+    const newDeck = new Deck({
+      name,
+      description,
+      ownerId,
+    })
 
-    res.status(201).json(deck)
+    await newDeck.save()
+    res.status(201).json(newDeck)
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to create deck' })
@@ -31,21 +28,18 @@ router.post('/', async (req, res) => {
 
 router.get('/', async (_req, res) => {
   try {
-    const allDecks = await db.query.decks.findMany({
-      with: {
-        owner: true,
-        deckCards: {
-          with: {
-            card: {
-              with: {
-                contents: true,
-              },
-            },
-          },
-        },
-      },
+    const allDecks = await Deck.find().populate('ownerId')
+
+    const decksWithCount = allDecks.map((deck) => {
+      const deckObject = deck.toObject()
+      return {
+        ...deckObject,
+        cardCount: deck.cards.length,
+        cards: [],
+      }
     })
-    res.json(allDecks)
+
+    res.json(decksWithCount)
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to fetch decks' })
@@ -55,22 +49,7 @@ router.get('/', async (_req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
-
-    const deck = await db.query.decks.findFirst({
-      where: eq(decks.id, id),
-      with: {
-        owner: true,
-        deckCards: {
-          with: {
-            card: {
-              with: {
-                contents: true,
-              },
-            },
-          },
-        },
-      },
-    })
+    const deck = await Deck.findById(id).populate('ownerId').populate('cards')
 
     if (!deck) {
       return res.status(404).json({ error: 'Deck not found' })
@@ -87,16 +66,12 @@ router.put('/:id', async (req, res) => {
     const { id } = req.params
     const { name, description } = req.body
 
-    const [updated] = await db
-      .update(decks)
-      .set({ name, description })
-      .where(eq(decks.id, id))
-      .returning()
+    const updatedDeck = await Deck.findByIdAndUpdate(id, { name, description }, { new: true })
 
-    if (!updated) {
+    if (!updatedDeck) {
       return res.status(404).json({ error: 'Deck not found' })
     }
-    res.json(updated)
+    res.json(updatedDeck)
   } catch (err) {
     console.error(err)
     res.status(500).json({ error: 'Failed to update deck' })
@@ -106,9 +81,9 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const [deleted] = await db.delete(decks).where(eq(decks.id, id)).returning()
+    const deletedDeck = await Deck.findByIdAndDelete(id)
 
-    if (!deleted) {
+    if (!deletedDeck) {
       return res.status(404).json({ error: 'Deck not found' })
     }
     res.status(204).send()
