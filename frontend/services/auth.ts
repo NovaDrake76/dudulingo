@@ -3,12 +3,14 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 const redirectUri = Linking.createURL('auth/callback');
 
 WebBrowser.maybeCompleteAuthSession();
 
 export const loginWithGoogle = async () => {
   try {
+
     const result = await WebBrowser.openAuthSessionAsync(`${API_URL}/auth/google`, redirectUri);
 
     if (result.type === 'success' && result.url) {
@@ -21,15 +23,14 @@ export const loginWithGoogle = async () => {
       }
     }
 
-    return { success: false, error: 'authentication failed' };
+    return { success: false, error: 'Authentication failed or was cancelled.' };
   } catch (error) {
-    console.error(error);
-    return { success: false, error: 'authentication error' };
+    console.error('Google login error:', error);
+    return { success: false, error: 'An unexpected error occurred during login.' };
   }
 };
 
 export const logout = async () => {
-  // remove all user-related data to ensure a clean state
   await AsyncStorage.removeItem('authToken');
   await AsyncStorage.removeItem('selectedLanguage');
   await AsyncStorage.removeItem('selectedDeck');

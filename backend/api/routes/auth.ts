@@ -24,22 +24,24 @@ router.get(
 
     const token = jwt.sign(
       {
-        id: dbUser._id, 
+        id: dbUser._id,
         name: dbUser.name,
       },
       process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     )
 
-    // for web, we redirect to the CLIENT_URL.
-    // for native mobile, we use the deep link scheme.
-    const userAgent = req.headers['user-agent'] || '';
-    const isMobile = /android|iphone|ipad|ipod/i.test(userAgent);
-    
-    const redirectUrl =
-      isMobile && process.env.NATIVE_SCHEME
-        ? `${process.env.NATIVE_SCHEME}://auth/callback?token=${token}`
-        : `${process.env.CLIENT_URL}/auth/callback?token=${token}`
+    // check if the request is coming from a mobile device's WebView
+    const userAgent = req.headers['user-agent'] || ''
+    const isMobile = /expo|android|iphone|ipad|ipod/i.test(userAgent)
+
+    let redirectUrl
+
+    if (isMobile) {
+      redirectUrl = `${process.env.CLIENT_NATIVE_SCHEME}://auth/callback?token=${token}`
+    } else {
+      redirectUrl = `${process.env.CLIENT_WEB_URL}/auth/callback?token=${token}`
+    }
 
     res.redirect(redirectUrl)
   }
