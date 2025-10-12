@@ -1,16 +1,16 @@
+import { relations } from 'drizzle-orm'
 import {
+  decimal,
+  integer,
+  pgEnum,
   pgTable,
+  primaryKey,
   serial,
   text,
   timestamp,
-  uuid,
   uniqueIndex,
-  primaryKey,
-  integer,
-  decimal,
-  pgEnum,
+  uuid,
 } from 'drizzle-orm/pg-core'
-import { relations } from 'drizzle-orm'
 
 export const cardTypeEnum = pgEnum('card_type', ['basic', 'multiple-choice', 'fill-in-the-blank'])
 
@@ -21,6 +21,7 @@ export const users = pgTable(
     name: text('name').notNull(),
     providerId: text('provider_id').notNull(),
     photoUrl: text('photo_url'),
+    selectedLanguage: text('selected_language'),
     createdAt: timestamp('created_at').defaultNow().notNull(),
     updatedAt: timestamp('updated_at')
       .defaultNow()
@@ -47,7 +48,23 @@ export const decks = pgTable('decks', {
     .$onUpdate(() => new Date()),
 })
 
-/** Cards table */
+// relationship table for users and their selected decks
+export const userDecks = pgTable(
+  'user_decks',
+  {
+    userId: uuid('user_id')
+      .references(() => users.id)
+      .notNull(),
+    deckId: uuid('deck_id')
+      .references(() => decks.id)
+      .notNull(),
+    addedAt: timestamp('added_at').defaultNow().notNull(),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.deckId] }),
+  })
+)
+
 export const cards = pgTable('cards', {
   id: uuid('id').defaultRandom().primaryKey(),
   type: cardTypeEnum('type').notNull(),
@@ -59,7 +76,6 @@ export const cards = pgTable('cards', {
     .$onUpdate(() => new Date()),
 })
 
-/** Card contents table */
 export const cardContents = pgTable('card_contents', {
   id: uuid('id').defaultRandom().primaryKey(),
   cardId: uuid('card_id')
@@ -109,6 +125,7 @@ export const userCardProgress = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   decks: many(decks),
   cardProgress: many(userCardProgress),
+  userDecks: many(userDecks),
 }))
 
 export const decksRelations = relations(decks, ({ one, many }) => ({
@@ -117,6 +134,18 @@ export const decksRelations = relations(decks, ({ one, many }) => ({
     references: [users.id],
   }),
   deckCards: many(deckCards),
+  userDecks: many(userDecks),
+}))
+
+export const userDecksRelations = relations(userDecks, ({ one }) => ({
+  user: one(users, {
+    fields: [userDecks.userId],
+    references: [users.id],
+  }),
+  deck: one(decks, {
+    fields: [userDecks.deckId],
+    references: [decks.id],
+  }),
 }))
 
 export const cardsRelations = relations(cards, ({ many }) => ({

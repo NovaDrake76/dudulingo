@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { logout } from '../../services/auth';
 
 const mockUser = {

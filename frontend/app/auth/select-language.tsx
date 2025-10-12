@@ -1,20 +1,20 @@
-import { router } from 'expo-router';
-import { View, Text, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LanguageSelector from '../../components/language-selector';
-
-// mocked post request
-const postUserLanguage = async (language: string) => {
-  console.log('User selected language:', language);
-  await AsyncStorage.setItem('selectedLanguage', language);
-  return Promise.resolve();
-};
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { router } from 'expo-router'
+import { Alert, StyleSheet, Text, View } from 'react-native'
+import LanguageSelector from '../../components/language-selector'
+import { api } from '../../services/api'
 
 export default function SelectLanguage() {
   const handleSelectLanguage = async () => {
-    await postUserLanguage('en');
-    router.replace('/select-deck');
-  };
+    try {
+      await api.saveLanguage('en')
+      await AsyncStorage.setItem('selectedLanguage', 'en')
+      router.replace('/select-deck')
+    } catch (error) {
+      console.error('Failed to save language:', error)
+      Alert.alert('Error', 'Failed to save language preference')
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -25,7 +25,7 @@ export default function SelectLanguage() {
         onPress={handleSelectLanguage}
       />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -43,4 +43,4 @@ const styles = StyleSheet.create({
     marginBottom: 48,
     textAlign: 'center',
   },
-});
+})

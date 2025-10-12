@@ -1,28 +1,54 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
-import { View, Text, Pressable, StyleSheet, Image, ScrollView } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { router } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { api } from '../services/api'
 
-const decks = [
-  {
-    id: 'fruits',
-    name: 'Fruits',
-    wordCount: 50,
-    image: "https://www.realfruitpower.com/RealFruit/RealFruitImages/457/image-thumb__457__full-banner/contentimage7-8-2014873623971.42b35659.png",
-  },
-  {
-    id: 'animals',
-    name: 'Animals',
-    wordCount: 75,
-    image: "https://hips.hearstapps.com/hmg-prod/images/dog-puppy-on-garden-royalty-free-image-1586966191.jpg",
-  },
-];
+type Deck = {
+  id: string
+  name: string
+  description: string
+  deckCards: any[]
+}
 
 export default function SelectDeck() {
+  const [decks, setDecks] = useState<Deck[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadDecks()
+  }, [])
+
+  const loadDecks = async () => {
+    try {
+      const allDecks = await api.getAllDecks()
+      setDecks(allDecks)
+    } catch (error) {
+      console.error('Failed to load decks:', error)
+      Alert.alert('Error', 'Failed to load decks')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSelectDeck = async (deckId: string) => {
-    console.log('User selected deck:', deckId);
-    await AsyncStorage.setItem('selectedDeck', deckId);
-    router.replace(`/(tabs)/learn`);
-  };
+    try {
+      await api.addDeckToUser(deckId)
+      await AsyncStorage.setItem('selectedDeck', deckId)
+      router.replace('/(tabs)/learn')
+    } catch (error) {
+      console.error('Failed to add deck:', error)
+      Alert.alert('Error', 'Failed to add deck to your learning list')
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#58cc02" />
+      </View>
+    )
+  }
 
   return (
     <View style={styles.container}>
@@ -35,14 +61,16 @@ export default function SelectDeck() {
             onPress={() => handleSelectDeck(deck.id)}>
             <View style={styles.deckInfo}>
               <Text style={styles.deckTitle}>{deck.name}</Text>
-              <Text style={styles.deckWordCount}>{deck.wordCount} words</Text>
+              <Text style={styles.deckDescription}>{deck.description}</Text>
+              <Text style={styles.deckWordCount}>
+                {deck.deckCards?.length || 0} cards
+              </Text>
             </View>
-            <Image source={{ uri: deck.image }} style={styles.deckImage} />
           </Pressable>
         ))}
       </ScrollView>
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -51,6 +79,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#0e0e0e',
     paddingTop: 80,
     paddingHorizontal: 24,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0e0e0e',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 32,
@@ -66,9 +100,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1f1f1f',
     borderRadius: 14,
     width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     padding: 20,
     marginBottom: 20,
     shadowColor: '#000',
@@ -85,14 +116,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
-  deckWordCount: {
-    color: '#ccc',
+  deckDescription: {
+    color: '#aaa',
     fontSize: 14,
     marginTop: 8,
   },
-  deckImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
+  deckWordCount: {
+    color: '#58cc02',
+    fontSize: 14,
+    marginTop: 8,
+    fontWeight: 'bold',
   },
-});
+})

@@ -1,41 +1,44 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, ImageSourcePropType, Pressable, StyleSheet, Text } from 'react-native'
 
 type LanguageSelectorProps = {
-  languageName: string;
-  flagSource: any;
-  onPress: () => void;
-};
+  languageName: string
+  flagSource: ImageSourcePropType
+  onPress: () => void
+}
 
 export default function LanguageSelector({ languageName, flagSource, onPress }: LanguageSelectorProps) {
   return (
-    <Pressable style={styles.container} onPress={onPress}>
+    <Pressable style={styles.button} onPress={onPress}>
       <Image source={flagSource} style={styles.flag} />
-      <Text style={styles.languageName}>{languageName}</Text>
+      <Text style={styles.text}>{languageName}</Text>
     </Pressable>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  container: {
+  button: {
+    backgroundColor: '#1f1f1f',
+    borderRadius: 14,
+    padding: 20,
+    width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#1f1f1f',
-    padding: 20,
-    borderRadius: 14,
-    width: '100%',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#333',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
   flag: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 20,
+    width: 60,
+    height: 40,
+    borderRadius: 4,
+    marginRight: 16,
   },
-  languageName: {
+  text: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
-});
+})

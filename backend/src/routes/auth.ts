@@ -4,7 +4,6 @@ import passport from 'passport'
 import googleStrategy from '../auth/googleStrategy.ts'
 import { db } from '../db/index.ts'
 import { users } from '../db/schema.ts'
-import { eq } from 'drizzle-orm'
 
 const router = Router()
 
@@ -44,8 +43,8 @@ router.get(
     )
 
     if (process.env.IS_DEV === 'true') {
-      res.json(token)
-      // res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
+      //res.json(token)
+      res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`)
       return
     }
 

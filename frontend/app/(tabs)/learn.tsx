@@ -1,44 +1,101 @@
-import { router } from 'expo-router';
-import { View, Text, Pressable, StyleSheet, Image } from 'react-native';
+import { router, useFocusEffect } from 'expo-router'
+import { useCallback, useState } from 'react'
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { api } from '../../services/api'
 
-const mockDecks = [
-  { id: 'fruits', name: 'Fruits', progress: 20, totalWords: 50, image: "https://www.realfruitpower.com/RealFruit/RealFruitImages/457/image-thumb__457__full-banner/contentimage7-8-2014873623971.42b35659.png" },
-  { id: 'animals', name: 'Animals', progress: 45, totalWords: 75, image: "https://hips.hearstapps.com/hmg-prod/images/dog-puppy-on-garden-royalty-free-image-1586966191.jpg" },
-];
 
-const ProgressBar = ({ progress, total }: { progress: number, total: number }) => {
-  const percentage = (progress / total) * 100;
-  return (
-    <View style={styles.progressBarContainer}>
-      <View style={[styles.progressBar, { width: `${percentage}%` }]} />
-    </View>
-  );
-};
+type UserStats = {
+  totalWords: number
+  masteredWords: number
+  learningWords: number
+}
 
 export default function Learn() {
+  const [stats, setStats] = useState<UserStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  const loadStats = async () => {
+    try {
+      const userStats = await api.getUserStats()
+      setStats(userStats)
+    } catch (error) {
+      console.error('Failed to load stats:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      loadStats()
+    }, [])
+  )
+
+  const handleStartReview = async () => {
+    try {
+      router.push('../review/general')
+    } catch (error) {
+      console.error('Failed to start review:', error)
+      Alert.alert('Error', 'Failed to start review')
+    }
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#58cc02" />
+      </View>
+    )
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Decks</Text>
-      {mockDecks.map((deck) => (
-        <View key={deck.id} style={styles.deckContainer}>
-          <Image source={{ uri: deck.image }} style={styles.deckImage} />
-          <View style={styles.deckInfo}>
-            <Text style={styles.deckName}>{deck.name}</Text>
-            <Text style={styles.deckProgress}>
-              You learned {deck.progress} of {deck.totalWords} words
-            </Text>
-            <ProgressBar progress={deck.progress} total={deck.totalWords} />
-            <Pressable style={styles.button} onPress={() => router.push(`../review/${deck.id}`)}>
-              <Text style={styles.buttonText}>Start Learning</Text>
-            </Pressable>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Your Progress</Text>
+
+      {stats && (
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{stats.totalWords}</Text>
+            <Text style={styles.statLabel}>Total Words</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={[styles.statNumber, styles.masteredColor]}>{stats.masteredWords}</Text>
+            <Text style={styles.statLabel}>Mastered</Text>
+          </View>
+
+          <View style={styles.statCard}>
+            <Text style={[styles.statNumber, styles.learningColor]}>{stats.learningWords}</Text>
+            <Text style={styles.statLabel}>Learning</Text>
           </View>
         </View>
-      ))}
-      <Pressable style={styles.addButton} onPress={() => router.push('/select-deck')}>
-        <Text style={styles.addButtonText}>Add New Deck</Text>
-      </Pressable>
-    </View>
-  );
+      )}
+
+      <View style={styles.actionsContainer}>
+        <Pressable style={styles.primaryButton} onPress={handleStartReview}>
+          <Text style={styles.primaryButtonText}>Start Review</Text>
+        </Pressable>
+
+        <Pressable 
+          style={styles.secondaryButton} 
+          onPress={() => router.push('/select-deck')}
+        >
+          <Text style={styles.secondaryButtonText}>Add New Deck</Text>
+        </Pressable>
+      </View>
+
+      {stats && stats.totalWords === 0 && (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            You haven&apos;t added any decks yet!
+          </Text>
+          <Text style={styles.emptyStateSubtext}>
+            Start by adding your first deck to begin learning.
+          </Text>
+        </View>
+      )}
+    </ScrollView>
+  )
 }
 
 const styles = StyleSheet.create({
@@ -46,76 +103,93 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#0e0e0e',
     padding: 20,
-    paddingTop: 60,
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#0e0e0e',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
     fontSize: 36,
     fontWeight: 'bold',
     color: '#58cc02',
     marginBottom: 36,
+    marginTop: 60,
     textAlign: 'center',
   },
-  deckContainer: {
-    backgroundColor: '#121212',
-    borderRadius: 14,
-    marginBottom: 20,
-    width: '100%',
+  statsContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
+    justifyContent: 'space-between',
+    marginBottom: 40,
   },
-  deckImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 10,
-    marginRight: 15,
-  },
-  deckInfo: {
-    flex: 1,
-  },
-  deckName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  deckProgress: {
-    color: '#ccc',
-    fontSize: 14,
-    marginVertical: 8,
-  },
-  progressBarContainer: {
-    height: 10,
-    backgroundColor: '#333',
-    borderRadius: 5,
-    marginBottom: 15,
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#58cc02',
-    borderRadius: 5,
-  },
-  button: {
-    backgroundColor: '#58cc02',
-    paddingVertical: 12,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  addButton: {
-    marginTop: 20,
+  statCard: {
     backgroundColor: '#1f1f1f',
-    paddingVertical: 16,
-    paddingHorizontal: 32,
-    borderRadius: 14,
+    borderRadius: 12,
+    padding: 20,
+    flex: 1,
+    marginHorizontal: 5,
     alignItems: 'center',
   },
-  addButtonText: {
+  statNumber: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 8,
+  },
+  masteredColor: {
+    color: '#58cc02',
+  },
+  learningColor: {
+    color: '#1cb0f6',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#aaa',
+    textAlign: 'center',
+  },
+  actionsContainer: {
+    marginBottom: 40,
+  },
+  primaryButton: {
+    backgroundColor: '#58cc02',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    backgroundColor: '#1f1f1f',
+    borderRadius: 12,
+    padding: 18,
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#58cc02',
+  },
+  secondaryButtonText: {
     color: '#58cc02',
     fontSize: 18,
     fontWeight: 'bold',
   },
-});
+  emptyState: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  emptyStateText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    color: '#aaa',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+})

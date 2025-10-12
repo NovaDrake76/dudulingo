@@ -1,184 +1,308 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
-import { View, Text, Pressable, StyleSheet, Image, TextInput, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import { api } from '../../services/api'
 
-// mock data for cards with different types and knowledge levels
-const mockCards = [
-  {
-    id: '1',
-    type: 'multiple_choice',
-    prompt: 'Apple',
-    options: ['Maçã', 'Banana', 'Uva', 'Laranja'],
-    answer: 'Maçã',
-    image: "https://www.realfruitpower.com/RealFruit/RealFruitImages/457/image-thumb__457__full-banner/contentimage7-8-2014873623971.42b35659.png",
-  },
-  {
-    id: '2',
-    type: 'multiple_choice',
-    prompt: 'Banana',
-    options: ['Laranja', 'Banana', 'Pera', 'Maçã'],
-    answer: 'Banana',
-    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSyOnpln-YaRi-maL_UHOgcUYXrnr6RZPMMlw&s",
-  },
-  {
-    id: '3',
-    type: 'type_answer',
-    prompt: 'strawberry',
-    answer: 'Morango',
-    image: null, // no image for higher level
-  },
-  {
-    id: '4',
-    type: 'type_answer',
-    prompt: null, // no word prompt, only image
-    answer: 'Melancia',
-    image: "https://cdn.awsli.com.br/2500x2500/681/681419/produto/314521622/melancia-2-n5w8wts5yx.jpeg"
-  },
-];
+type QuestionData = {
+  cardId: string
+  questionType: string
+  correctAnswer: string
+  imageUrl?: string
+  word?: string
+  translation?: string
+  options?: string[] | { text: string; imageUrl: string }[]
+}
 
-export default function ReviewDeck() {
-  const [cardIndex, setCardIndex] = useState(0);
-  const [inputValue, setInputValue] = useState('');
+export default function Review() {
+  const { deckId } = useLocalSearchParams()
+  const [currentQuestion, setCurrentQuestion] = useState<QuestionData | null>(null)
+  const [selectedAnswer, setSelectedAnswer] = useState<string>('')
+  const [typedAnswer, setTypedAnswer] = useState<string>('')
+  const [showResult, setShowResult] = useState(false)
+  const [isCorrect, setIsCorrect] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [cardsReviewed, setCardsReviewed] = useState(0)
 
-  const handleAnswer = (answer: string) => {
-    const isCorrect = answer.toLowerCase() === mockCards[cardIndex].answer.toLowerCase();
-    console.log(`Answer for card ${mockCards[cardIndex].id} is ${isCorrect ? 'correct' : 'incorrect'}`);
+  const loadNextQuestion = async () => {
+    setLoading(true)
+    setShowResult(false)
+    setSelectedAnswer('')
+    setTypedAnswer('')
 
-    // a small delay to show feedback before the next card
-    setTimeout(() => {
-      if (cardIndex < mockCards.length - 1) {
-        setCardIndex(cardIndex + 1);
-        setInputValue('');
-      } else {
-        alert('Deck finished!');
-        router.back();
+    try {
+      const questionData = await api.getNextReviewCard()
+      if (questionData.message) {
+        // no more cards
+        router.back()
+        return
       }
-    }, 300);
-  };
+      setCurrentQuestion(questionData)
+    } catch (error) {
+      console.error('Failed to load question:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const currentCard = mockCards[cardIndex];
+  useEffect(() => {
+    loadNextQuestion()
+  }, [])
 
- return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#0e0e0e' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View style={styles.container}>
-            <View style={styles.card}>
-              {currentCard.image && <Image source={
-    { uri: currentCard.image }
-              } style={styles.cardImage} />}
-              {currentCard.prompt && <Text style={styles.prompt}>{currentCard.prompt}</Text>}
-            </View>
+  const handleAnswer = () => {
+    if (!currentQuestion) return
 
-            {currentCard.type === 'multiple_choice' && (
-              <View style={styles.optionsContainer}>
-                {currentCard.options?.map((option) => (
-                  <Pressable
-                    key={option}
-                    style={styles.optionButton}
-                    onPress={() => handleAnswer(option)}>
-                    <Text style={styles.optionText}>{option}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            )}
+    let userAnswer = ''
+    
+    if (currentQuestion.questionType.includes('type_answer')) {
+      userAnswer = typedAnswer.trim().toLowerCase()
+    } else {
+      userAnswer = selectedAnswer
+    }
 
-            {currentCard.type === 'type_answer' && (
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Type your answer"
-                  placeholderTextColor="#888"
-                  value={inputValue}
-                  onChangeText={setInputValue}
-                />
-                <Pressable style={styles.checkButton} onPress={() => handleAnswer(inputValue)}>
-                  <Text style={styles.checkButtonText}>Check</Text>
+    const correct = userAnswer === currentQuestion.correctAnswer.toLowerCase()
+    setIsCorrect(correct)
+    setShowResult(true)
+  }
+
+  const handleNext = async () => {
+    if (!currentQuestion) return
+
+    // submit the answer with rating (5 = correct, 0 = incorrect)
+    const rating = isCorrect ? 5 : 0
+    
+    try {
+      await api.submitReview(currentQuestion.cardId, rating)
+      setCardsReviewed(prev => prev + 1)
+      
+      // load next question
+      loadNextQuestion()
+    } catch (error) {
+      console.error('Failed to submit review:', error)
+    }
+  }
+
+  const renderQuestion = () => {
+    if (!currentQuestion) return null
+
+    const { questionType, imageUrl, word, translation, options } = currentQuestion
+
+    return (
+      <View style={styles.questionContainer}>
+        {/* Show image if question type includes image */}
+        {questionType.includes('image') && imageUrl && (
+          <Image source={{ uri: imageUrl }} style={styles.questionImage} />
+        )}
+
+        {/* Show word if needed */}
+        {questionType.includes('word') && word && !questionType.includes('image_word') && (
+          <Text style={styles.questionWord}>{word}</Text>
+        )}
+
+        {/* Show translation if needed */}
+        {questionType.includes('translation') && translation && (
+          <Text style={styles.questionTranslation}>{translation}</Text>
+        )}
+
+        {/* Multiple choice options */}
+        {questionType.includes('multiple_choice') && options && (
+          <View style={styles.optionsContainer}>
+            {options.map((option, index) => {
+              const isImageOption = typeof option === 'object' && 'imageUrl' in option
+              const optionText = isImageOption ? option.text : option
+              const optionImage = isImageOption ? option.imageUrl : null
+
+              return (
+                <Pressable
+                  key={index}
+                  style={[
+                    styles.optionButton,
+                    selectedAnswer === optionText && styles.selectedOption,
+                  ]}
+                  onPress={() => setSelectedAnswer(optionText)}
+                  disabled={showResult}
+                >
+                  {optionImage && (
+                    <Image source={{ uri: optionImage }} style={styles.optionImage} />
+                  )}
+                  <Text style={styles.optionText}>{optionText}</Text>
                 </Pressable>
-              </View>
-            )}
+              )
+            })}
           </View>
-        </ScrollView>
-    </KeyboardAvoidingView>
-  );
+        )}
+
+        {/* Type answer input */}
+        {questionType.includes('type_answer') && (
+          <TextInput
+            style={styles.input}
+            placeholder="Type your answer..."
+            placeholderTextColor="#888"
+            value={typedAnswer}
+            onChangeText={setTypedAnswer}
+            editable={!showResult}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+        )}
+      </View>
+    )
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#58cc02" />
+      </View>
+    )
+  }
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.progressText}>Cards reviewed: {cardsReviewed}</Text>
+      </View>
+
+      {renderQuestion()}
+
+      {showResult && (
+        <View style={[styles.resultContainer, isCorrect ? styles.correctResult : styles.wrongResult]}>
+          <Text style={styles.resultText}>
+            {isCorrect ? '✓ Correct!' : '✗ Wrong!'}
+          </Text>
+          <Text style={styles.correctAnswerText}>
+            Correct answer: {currentQuestion?.correctAnswer}
+          </Text>
+        </View>
+      )}
+
+      {!showResult ? (
+        <Pressable style={styles.submitButton} onPress={handleAnswer}>
+          <Text style={styles.submitButtonText}>Check Answer</Text>
+        </Pressable>
+      ) : (
+        <Pressable style={styles.nextButton} onPress={handleNext}>
+          <Text style={styles.nextButtonText}>Next</Text>
+        </Pressable>
+      )}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0e0e0e',
-    justifyContent: 'space-around',
-    alignItems: 'center',
     padding: 20,
   },
-  card: {
-    backgroundColor: '#1f1f1f',
-    borderRadius: 20,
-    width: '100%',
-    height: '45%',
-    alignItems: 'center',
+  header: {
+    marginTop: 40,
+    marginBottom: 20,
+  },
+  progressText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  questionContainer: {
+    flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    marginBottom: 40,
+    alignItems: 'center',
   },
-  cardImage: {
-    width: 150,
-    height: 150,
-    resizeMode: 'contain',
+  questionImage: {
+    width: 250,
+    height: 250,
+    borderRadius: 12,
+    marginBottom: 30,
   },
-  prompt: {
-    fontSize: 48,
+  questionWord: {
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#fff',
-    marginTop: 20,
+    marginBottom: 30,
+  },
+  questionTranslation: {
+    fontSize: 24,
+    color: '#ccc',
+    marginBottom: 30,
   },
   optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
     width: '100%',
+    marginTop: 20,
   },
   optionButton: {
     backgroundColor: '#1f1f1f',
-    width: '48%',
-    paddingVertical: 24,
-    borderRadius: 14,
-    marginBottom: 16,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+  },
+  selectedOption: {
+    backgroundColor: '#58cc02',
+  },
+  optionImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
   },
   optionText: {
     color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-  },
-  inputContainer: {
-    width: '100%',
-    alignItems: 'center',
+    fontSize: 18,
+    flex: 1,
   },
   input: {
+    width: '100%',
     backgroundColor: '#1f1f1f',
     color: '#fff',
-    width: '100%',
-    padding: 20,
-    borderRadius: 14,
     fontSize: 18,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  resultContainer: {
+    padding: 20,
+    borderRadius: 12,
+    marginBottom: 20,
+  },
+  correctResult: {
+    backgroundColor: '#58cc02',
+  },
+  wrongResult: {
+    backgroundColor: '#ff4b4b',
+  },
+  resultText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
     textAlign: 'center',
   },
-  checkButton: {
-    backgroundColor: '#58cc02',
-    paddingVertical: 16,
-    paddingHorizontal: 48,
-    borderRadius: 14,
-    marginTop: 24,
+  correctAnswerText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 8,
   },
-  checkButtonText: {
+  submitButton: {
+    backgroundColor: '#58cc02',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  submitButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
   },
-});
+  nextButton: {
+    backgroundColor: '#1cb0f6',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  nextButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+})
