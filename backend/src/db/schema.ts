@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 import { v4 as uuidv4 } from 'uuid'
-const { Schema, model, models, Document } = mongoose
+const { Schema, model, models } = mongoose
 
 export interface IUser extends Document {
   _id: string
