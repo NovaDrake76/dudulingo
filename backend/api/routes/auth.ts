@@ -31,10 +31,7 @@ router.get(
       { expiresIn: '7d' }
     )
 
-    const redirectUrl =
-      process.env.IS_DEV === 'true'
-        ? `${process.env.FRONTEND_URL}/auth/callback?token=${token}`
-        : `dudulingo://auth/callback?token=${token}`
+    const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?token=${token}`
 
     res.redirect(redirectUrl)
   }

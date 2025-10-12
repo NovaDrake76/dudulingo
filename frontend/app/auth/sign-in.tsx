@@ -11,13 +11,12 @@ export default function SignIn() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     const result = await loginWithGoogle();
-    if (result.success) {
-      router.replace('/(tabs)/learn');
-    } else {
-      alert('failed to login. please try again.');
-      router.replace('/auth/select-language');
+    if (!result.success) {
+      alert(result.error || 'Failed to login. Please try again.');
+      setLoading(false);
     }
-    setLoading(false);
+    // On success, the app will navigate via the callback handler,
+    // so we don't need to do anything here.
   };
 
   const changeLocale = (locale: string) => {

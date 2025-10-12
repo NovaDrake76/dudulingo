@@ -1,33 +1,20 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { api } from '../../services/api';
+import { useAuth } from '../_layout';
 
 export default function AuthCallback() {
   const { token } = useLocalSearchParams();
+  const { setToken } = useAuth();
 
   useEffect(() => {
     const handleToken = async () => {
-      if (typeof token === 'string') {
-        await api.saveAuthToken(token);
-        
-        // garantir que o usuário está totalmente integrado
-        const selectedLanguage = await AsyncStorage.getItem('selectedLanguage');
-        if (!selectedLanguage) {
-          router.replace('/auth/select-language');
-          return;
-        }
-
-        const selectedDeck = await AsyncStorage.getItem('selectedDeck');
-        if (!selectedDeck) {
-          router.replace('/select-deck');
-          return;
-        }
-        
-        router.replace('/(tabs)/learn');
+      if (typeof token === 'string' && token) {
+        await setToken(token);
+        // After setting the token, navigate to the first step of onboarding.
+        router.replace('/auth/select-language');
       } else {
-        // se nenhum token for encontrado, volte para a tela de login
+        // If no token is found, something went wrong, so return to the sign-in screen.
         router.replace('/auth/sign-in');
       }
     };

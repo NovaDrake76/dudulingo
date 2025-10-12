@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { logout } from '../../services/auth';
 import i18n, { setLocale } from '../../services/i18n';
+import { useAuth } from '../_layout';
 
 const mockUser = {
   name: 'Dudu',
@@ -9,8 +9,10 @@ const mockUser = {
 };
 
 export default function Profile() {
+  const { setToken } = useAuth();
+
   const handleLogout = async () => {
-    await logout();
+    await setToken(null);
     router.replace('/auth/sign-in');
   };
 
