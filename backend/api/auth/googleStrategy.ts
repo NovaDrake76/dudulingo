@@ -2,6 +2,7 @@ import { type Profile } from 'passport'
 import { Strategy, type VerifyCallback } from 'passport-google-oauth20'
 
 async function verify(
+  _req: any,
   _accessToken: string,
   _refreshToken: string,
   profile: Profile,
@@ -16,11 +17,12 @@ async function verify(
   return done(null, user)
 }
 
-
 const options = {
   clientID: process.env.GOOGLE_CLIENT_ID || '',
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
   callbackURL: process.env.IS_DEV ? `http://localhost:8000/auth/google/callback` : `${process.env.API_URL}/auth/google/callback`,
+
+  passReqToCallback: true as true,
 }
 
 export default new Strategy(options, verify)

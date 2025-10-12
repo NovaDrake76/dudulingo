@@ -11,10 +11,8 @@ export default function AuthCallback() {
     const handleToken = async () => {
       if (typeof token === 'string' && token) {
         await setToken(token);
-        // After setting the token, navigate to the first step of onboarding.
         router.replace('/auth/select-language');
       } else {
-        // If no token is found, something went wrong, so return to the sign-in screen.
         router.replace('/auth/sign-in');
       }
     };

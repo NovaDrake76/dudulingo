@@ -8,17 +8,22 @@ import i18n, { setLocale } from '../../services/i18n';
 export default function SignIn() {
   const [loading, setLoading] = useState(false);
 
-  const handleGoogleLogin = async () => {
+const handleGoogleLogin = async () => {
     setLoading(true);
-    const result = await loginWithGoogle();
-    if (!result.success) {
-      alert(result.error || 'Failed to login. Please try again.');
+    try {
+      const result = await loginWithGoogle();
+      if (result && !result.success) {
+        alert(result.error || 'Failed to login. Please try again.');
+      }
+      
+
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('An unexpected error occurred during login.');
+    } finally {
       setLoading(false);
     }
-    // On success, the app will navigate via the callback handler,
-    // so we don't need to do anything here.
   };
-
   const changeLocale = (locale: string) => {
     setLocale(locale);
     router.replace('/auth/sign-in');
