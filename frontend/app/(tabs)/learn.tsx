@@ -2,7 +2,7 @@ import { router, useFocusEffect } from 'expo-router'
 import { useCallback, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { api } from '../../services/api'
-
+import i18n from '../../services/i18n'
 
 type UserStats = {
   totalWords: number
@@ -50,47 +50,47 @@ export default function Learn() {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.title}>Your Progress</Text>
+      <Text style={styles.title}>{i18n.t('yourProgress')}</Text>
 
       {stats && (
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{stats.totalWords}</Text>
-            <Text style={styles.statLabel}>Total Words</Text>
+            <Text style={styles.statLabel}>{i18n.t('totalWords')}</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={[styles.statNumber, styles.masteredColor]}>{stats.masteredWords}</Text>
-            <Text style={styles.statLabel}>Mastered</Text>
+            <Text style={styles.statLabel}>{i18n.t('mastered')}</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={[styles.statNumber, styles.learningColor]}>{stats.learningWords}</Text>
-            <Text style={styles.statLabel}>Learning</Text>
+            <Text style={styles.statLabel}>{i18n.t('learning')}</Text>
           </View>
         </View>
       )}
 
       <View style={styles.actionsContainer}>
         <Pressable style={styles.primaryButton} onPress={handleStartReview}>
-          <Text style={styles.primaryButtonText}>Start Review</Text>
+          <Text style={styles.primaryButtonText}>{i18n.t('startReview')}</Text>
         </Pressable>
 
-        <Pressable 
-          style={styles.secondaryButton} 
+        <Pressable
+          style={styles.secondaryButton}
           onPress={() => router.push('/select-deck')}
         >
-          <Text style={styles.secondaryButtonText}>Add New Deck</Text>
+          <Text style={styles.secondaryButtonText}>{i18n.t('addNewDeck')}</Text>
         </Pressable>
       </View>
 
       {stats && stats.totalWords === 0 && (
         <View style={styles.emptyState}>
           <Text style={styles.emptyStateText}>
-            You haven&apos;t added any decks yet!
+            {i18n.t('noDecks')}
           </Text>
           <Text style={styles.emptyStateSubtext}>
-            Start by adding your first deck to begin learning.
+            {i18n.t('noDecksSubtitle')}
           </Text>
         </View>
       )}

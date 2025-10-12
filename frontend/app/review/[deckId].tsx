@@ -8,6 +8,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { api } from '../../services/api';
+import i18n from '../../services/i18n';
 
 type QuestionData = {
   cardId: string;
@@ -21,7 +22,7 @@ type QuestionData = {
 
 export default function Review() {
   const { deckId } = useLocalSearchParams();
-  
+
   const [sessionCards, setSessionCards] = useState<QuestionData[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
@@ -59,11 +60,11 @@ export default function Review() {
         if (sessionData.cards && sessionData.cards.length > 0) {
           setSessionCards(sessionData.cards);
         } else {
-          Alert.alert("All done!", "You have no cards to review at the moment.", [{ text: "OK", onPress: () => router.back() }]);
+          Alert.alert(i18n.t('allDone'), i18n.t('noCardsToReview'), [{ text: "OK", onPress: () => router.back() }]);
         }
       } catch (error) {
         console.error('Failed to start session:', error);
-        Alert.alert("Error", "Could not start the review session.", [{ text: "OK", onPress: () => router.back() }]);
+        Alert.alert(i18n.t('error'), i18n.t('failedToStartSession'), [{ text: "OK", onPress: () => router.back() }]);
       } finally {
         setLoading(false);
       }
@@ -89,7 +90,7 @@ export default function Review() {
     setSelectedAnswer(option);
     checkAnswer(option);
   };
-  
+
   const handleCheckTypedAnswer = () => {
     if (showResult) return;
     checkAnswer(typedAnswer);
@@ -100,19 +101,19 @@ export default function Review() {
     if (!currentQuestion) return;
 
     const rating = isCorrect ? 'easy' : 'very_hard';
-    
+
     try {
       await api.submitReview(currentQuestion.cardId, rating);
-      
+
       const nextIndex = currentQuestionIndex + 1;
-        
+
       if (nextIndex < sessionCards.length) {
           setCurrentQuestionIndex(nextIndex);
       } else {
           router.back();
           return;
       }
-      
+
       setShowResult(false);
       setSelectedAnswer('');
       setTypedAnswer('');
@@ -121,7 +122,7 @@ export default function Review() {
 
     } catch (error) {
       console.error('Failed to submit review:', error);
-      Alert.alert('Error', 'Could not save your progress. Please try again.');
+      Alert.alert(i18n.t('error'), i18n.t('failedToSaveProgress'));
     }
   };
 
@@ -133,19 +134,19 @@ export default function Review() {
 
     if (isCorrectAnswer) return styles.correctOption;
     if (isSelectedAnswer && !isCorrect) return styles.wrongOption;
-    
+
     return styles.disabledOption;
   };
 
   const renderQuestionContent = () => {
     if (!currentQuestion) return null;
     const { questionType, imageUrl, word, prompt } = currentQuestion;
-    
-    let title = 'Translate this word:';
+
+    let title = i18n.t('translateThisWord');
     if (questionType?.includes('image_type_answer')) {
-      title = 'What is this in English?';
+      title = i18n.t('whatIsThisInEnglish');
     } else if (questionType?.includes('image')) {
-      title = 'What is this?';
+      title = i18n.t('whatIsThis');
     }
 
 
@@ -163,7 +164,7 @@ export default function Review() {
     if (!currentQuestion) return null;
     return (
       <View style={styles.feedbackCard}>
-        <Text style={styles.feedbackTitle}>Correct Answer:</Text>
+        <Text style={styles.feedbackTitle}>{i18n.t('correctAnswer')}</Text>
         {currentQuestion.imageUrl && <Image source={{ uri: currentQuestion.imageUrl }} style={styles.feedbackImage} />}
         <Text style={styles.feedbackWord}>{currentQuestion.correctAnswer}</Text>
         <Text style={styles.feedbackTranslation}>{currentQuestion.prompt}</Text>
@@ -184,7 +185,7 @@ export default function Review() {
   return (
     <View style={styles.container}>
         <View style={styles.header}>
-            <Text style={styles.progressText}>Card {currentQuestionIndex + 1} of {sessionCards.length}</Text>
+            <Text style={styles.progressText}>{i18n.t('card')} {currentQuestionIndex + 1} {i18n.t('of')} {sessionCards.length}</Text>
         </View>
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <View>
@@ -221,7 +222,7 @@ export default function Review() {
           {questionType?.includes('type_answer') && (
             <TextInput
               style={styles.input}
-              placeholder="Type your answer"
+              placeholder={i18n.t('typeYourAnswer')}
               placeholderTextColor="#777"
               value={typedAnswer}
               onChangeText={setTypedAnswer}
@@ -233,15 +234,15 @@ export default function Review() {
         </ScrollView>
         <View style={styles.footer}>
             {showResult ? (
-              <Pressable 
-                style={[styles.footerButton, isCorrect ? styles.correctButton : styles.wrongButton]} 
+              <Pressable
+                style={[styles.footerButton, isCorrect ? styles.correctButton : styles.wrongButton]}
                 onPress={handleNext}
               >
-                <Text style={styles.footerButtonText}>Next</Text>
+                <Text style={styles.footerButtonText}>{i18n.t('next')}</Text>
               </Pressable>
             ) : questionType?.includes('type_answer') && (
               <Pressable style={styles.footerButton} onPress={handleCheckTypedAnswer}>
-                <Text style={styles.footerButtonText}>Check Answer</Text>
+                <Text style={styles.footerButtonText}>{i18n.t('checkAnswer')}</Text>
               </Pressable>
             )}
         </View>

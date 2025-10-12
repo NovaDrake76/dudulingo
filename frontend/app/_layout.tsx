@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import i18n, { getLocale } from '../services/i18n';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -20,19 +21,28 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    if (!loaded) {
+    const loadLocale = async () => {
+      const locale = await getLocale();
+      i18n.locale = locale;
       setLoaded(true);
       SplashScreen.hideAsync();
+    };
+
+    if (!loaded) {
+      loadLocale();
     }
   }, [loaded]);
+
+  if (!loaded) {
+    return null;
+  }
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-        <Stack.Screen name="auth/select-language" options={{ title: 'Select Language' }} />
-        <Stack.Screen name="select-deck" options={{ title: 'Select Deck' }} />
+        <Stack.Screen name="auth/select-language" options={{ title: i18n.t('selectLanguageTitle') }} />
+        <Stack.Screen name="select-deck" options={{ title: i18n.t('selectDeckTitle') }} />
         <Stack.Screen name="review/[deckId]" options={{ title: 'Review' }} />
       </Stack>
       <StatusBar style="auto" />

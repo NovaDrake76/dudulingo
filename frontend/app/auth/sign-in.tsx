@@ -1,26 +1,41 @@
-import { useState } from 'react'
-import { View, Text, Pressable, StyleSheet, Image, ActivityIndicator } from 'react-native'
-import { router } from 'expo-router'
-import { loginWithGoogle } from '../../services/auth'
-import GoogleIcon from '../../components/icons/GoogleIcon'
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import GoogleIcon from '../../components/icons/GoogleIcon';
+import { loginWithGoogle } from '../../services/auth';
+import i18n, { setLocale } from '../../services/i18n';
 
 export default function SignIn() {
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
-    setLoading(true)
-    const result = await loginWithGoogle()
+    setLoading(true);
+    const result = await loginWithGoogle();
     if (result.success) {
-      router.replace('/(tabs)/learn')
+      router.replace('/(tabs)/learn');
     } else {
-      alert('failed to login. please try again.')
-      router.replace('/auth/select-language')
+      alert('failed to login. please try again.');
+      router.replace('/auth/select-language');
     }
-    setLoading(false)
-  }
+    setLoading(false);
+  };
+
+  const changeLocale = (locale: string) => {
+    setLocale(locale);
+    router.replace('/auth/sign-in');
+  };
 
   return (
     <View style={styles.container}>
+      <View style={styles.languageSelector}>
+        <Pressable onPress={() => changeLocale('en')}>
+          <Text style={i18n.locale === 'en' ? styles.activeLanguage : styles.language}>EN</Text>
+        </Pressable>
+        <Text style={styles.language}>|</Text>
+        <Pressable onPress={() => changeLocale('pt-BR')}>
+          <Text style={i18n.locale === 'pt-BR' ? styles.activeLanguage : styles.language}>PT-BR</Text>
+        </Pressable>
+      </View>
       <View style={styles.card}>
         <Image
           source={require('../../assets/images/dudulingo.png')}
@@ -28,10 +43,8 @@ export default function SignIn() {
           resizeMode="contain"
         />
 
-        <Text style={styles.title}>Repecards</Text>
-        <Text style={styles.subtitle}>Expand your vocabulary, conquer new languages.</Text>
-
-
+        <Text style={styles.title}>{i18n.t('signInTitle')}</Text>
+        <Text style={styles.subtitle}>{i18n.t('signInSubtitle')}</Text>
 
         <Pressable
           style={({ pressed }) => [
@@ -46,19 +59,18 @@ export default function SignIn() {
           ) : (
             <>
               <GoogleIcon />
-              <Text style={styles.googleText}>continue with google</Text>
+              <Text style={styles.googleText}>{i18n.t('continueWithGoogle')}</Text>
             </>
           )}
         </Pressable>
 
         <Text style={styles.footer}>
-          by continuing, you agree to our terms of service
+          {i18n.t('termsOfService')}
         </Text>
       </View>
     </View>
-  )
+  );
 }
-
 
 const styles = StyleSheet.create({
   container: {
@@ -67,6 +79,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+  },
+  languageSelector: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  language: {
+    color: '#ccc',
+    fontSize: 16,
+    marginHorizontal: 10,
+  },
+  activeLanguage: {
+    color: '#58cc02',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginHorizontal: 10,
   },
   card: {
     backgroundColor: '#121212',
@@ -130,4 +158,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 28,
   },
-})
+});

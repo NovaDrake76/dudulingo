@@ -18,7 +18,7 @@ async function verify(
 const options = {
   clientID: process.env.GOOGLE_CLIENT_ID || '',
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  callbackURL: `http://${process.env.BASE_URL}:${process.env.PORT}/auth/google/callback`,
+  callbackURL: process.env.IS_DEV == "true" ? `http://${process.env.BASE_URL}:${process.env.PORT}/auth/google/callback` : `https://${process.env.API_URL}/auth/google/callback`,
 }
 
 export default new Strategy(options, verify)

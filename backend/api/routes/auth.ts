@@ -31,10 +31,15 @@ router.get(
       { expiresIn: '7d' }
     )
 
+    // for web, we redirect to the CLIENT_URL.
+    // for native mobile, we use the deep link scheme.
+    const userAgent = req.headers['user-agent'] || '';
+    const isMobile = /android|iphone|ipad|ipod/i.test(userAgent);
+    
     const redirectUrl =
-      process.env.IS_DEV === 'true'
-        ? `${process.env.FRONTEND_URL}/auth/callback?token=${token}`
-        : `dudulingo://auth/callback?token=${token}`
+      isMobile && process.env.NATIVE_SCHEME
+        ? `${process.env.NATIVE_SCHEME}://auth/callback?token=${token}`
+        : `${process.env.CLIENT_URL}/auth/callback?token=${token}`
 
     res.redirect(redirectUrl)
   }

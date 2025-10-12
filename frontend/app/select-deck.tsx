@@ -3,9 +3,10 @@ import { router } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { api } from '../services/api'
+import i18n from '../services/i18n'
 
 type Deck = {
-  _id: string 
+  _id: string
   name: string
   description: string
   cardCount: number
@@ -52,7 +53,7 @@ export default function SelectDeck() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select a deck to start learning!</Text>
+      <Text style={styles.title}>{i18n.t('selectDeckTitle')}</Text>
       <ScrollView contentContainerStyle={styles.decksContainer}>
         {decks.map((deck) => (
           <Pressable
