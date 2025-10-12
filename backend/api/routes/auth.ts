@@ -1,17 +1,17 @@
-import { Router } from 'express'
-import jwt from 'jsonwebtoken'
-import passport from 'passport'
-import { User } from '../db/schema.ts'
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import passport from 'passport';
+import { User } from '../db/schema.ts';
 
-const router = Router()
+const router = Router();
 
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get(
   '/google/callback',
   passport.authenticate('google', { session: false }),
   async (req, res) => {
-    const user = req.user as any
+    const user = req.user as any;
 
     const dbUser = await User.findOneAndUpdate(
       { providerId: user.id },
@@ -20,11 +20,11 @@ router.get(
         photoUrl: user.photos?.[0]?.value || null,
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
-    )
+    );
 
     const token = jwt.sign(
       {
-        id: dbUser._id, 
+        id: dbUser._id,
         name: dbUser.name,
       },
       process.env.JWT_SECRET!,
@@ -38,6 +38,6 @@ router.get(
 
     res.redirect(redirectUrl)
   }
-)
+);
 
-export default router
+export default router;

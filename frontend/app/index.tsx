@@ -1,13 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { router } from 'expo-router'
-import * as WebBrowser from 'expo-web-browser'
 import { useEffect, useState } from 'react'
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
 import { api } from '../services/api'
-
-WebBrowser.maybeCompleteAuthSession()
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000'
+import { loginWithGoogle } from '../services/auth'
 
 export default function Index() {
   const [loading, setLoading] = useState(true)
@@ -45,25 +41,13 @@ export default function Index() {
   }
 
   const handleGoogleLogin = async () => {
-    try {
-      const result = await WebBrowser.openAuthSessionAsync(
-        `${API_URL}/auth/google`,
-        'dudulingo://auth/callback'
-      )
-
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url)
-        const token = url.searchParams.get('token')
-        
-        if (token) {
-          await api.saveAuthToken(token)
-          router.replace('/auth/select-language')
-        }
-      }
-    } catch (error) {
-      console.error('Login failed:', error)
+    const result = await loginWithGoogle();
+    if (result.success) {
+      router.replace('/auth/select-language');
+    } else {
+      console.error('Login failed:', result.error);
     }
-  }
+  };
 
   if (loading) {
     return (
