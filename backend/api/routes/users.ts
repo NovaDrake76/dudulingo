@@ -10,7 +10,11 @@ const authenticateJwt = passport.authenticate(jwtStrategy, { session: false })
 
 router.use(authenticateJwt)
 
-// dave user's selected language
+router.get('/me', (req: any, res) => {
+  res.json(req.user)
+})
+
+
 router.post('/language', async (req: any, res) => {
   try {
     const userId = req.user.id

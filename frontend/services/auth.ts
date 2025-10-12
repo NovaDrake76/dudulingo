@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Buffer } from 'buffer';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
@@ -38,4 +39,14 @@ export const loginWithGoogle = async () => {
     console.error('Google login error:', error);
     return { success: false, error: 'An unexpected error occurred.' };
   }
+};
+
+export const getToken = async (): Promise<string | null> => {
+  return await AsyncStorage.getItem('authToken');
+};
+
+export const logout = async () => {
+  await AsyncStorage.removeItem('authToken');
+  await AsyncStorage.removeItem('selectedLanguage');
+  await AsyncStorage.removeItem('selectedDeck');
 };
