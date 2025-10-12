@@ -2,10 +2,10 @@
   "name": "dudulingo-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "index.ts": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "node --env-file=.env --watch src/main.ts",
+    "dev": "node --env-file=.env --watch src/index.ts",
     "lint": "eslint \"src/**/*.{ts,js}\" --max-warnings=0",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "db:seed": "tsx src/db/seed.ts",

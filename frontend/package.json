@@ -1,6 +1,6 @@
 {
   "name": "dudulingo",
-  "main": "expo-router/entry",
+  "index.ts": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
