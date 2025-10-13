@@ -1,7 +1,3 @@
-Of course, here is the complete documentation for the Repecards project.
-
----
-
 # Repecards Documentation
 
 Welcome to the official documentation for Repecards, a language-learning app designed to help users memorize new words efficiently through spaced repetition.
