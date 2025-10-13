@@ -2,7 +2,21 @@
 
 Este documento detalha três code smells identificados no código do projeto, explicando por que são problemáticos e onde se encontram.
 
-### 1. Long Method
+### 1. Duplicated Code
+
+-   **Descrição:** Ocorre quando o mesmo bloco de código (ou um muito semelhante) aparece em vários lugares. A duplicação de código é perigosa porque, se for necessário corrigir um bug ou fazer uma alteração, é preciso lembrar de atualizar todos os locais, o que frequentemente não acontece.
+-   **Localização:** No arquivo `backend/api/routes/review.ts`, a lógica para criar uma sessão de revisão está duplicada entre a rota `GET /session/general` e a rota `GET /deck/:deckId`.
+-   **Problema:** Ambas as rotas realizam os seguintes passos:
+    1.  Identificam um conjunto de cartões (seja geral ou de um deck específico).
+    2.  Obtêm o progresso do usuário para esses cartões.
+    3.  Iteram sobre os cartões selecionados.
+    4.  Chamam a função `createQuestionData` para cada cartão.
+    5.  Retornam a lista de `sessionQuestions`.
+    Embora a lógica para *selecionar* os cartões seja diferente, o processo subsequente de *transformá-los* em questões é idêntico e poderia ser extraído para uma função compartilhada, evitando a repetição do `Promise.all` e da lógica de mapeamento.
+     **Ferramenta:** Deepscan
+     **Status:** Corrigido em Sprint 2
+
+### 2. Long Method
 
 -   **Descrição:** O code smell Long Method ocorre quando uma função ou método cresce demais, acumulando muitas responsabilidades. Isso torna o código difícil de ler, entender e manter. Funções longas são mais propensas a bugs, pois é fácil se perder na lógica complexa.
 -   **Localização:** O principal exemplo encontrado está no arquivo `backend/api/routes/review.ts`, especificamente dentro da rota `router.get('/session/general', ...)`.
@@ -13,8 +27,10 @@ Este documento detalha três code smells identificados no código do projeto, ex
     4.  Gerenciar os IDs dos cards já vistos para evitar duplicatas.
     5.  Mapear os resultados para o formato final da questão.
     Essa concentração de responsabilidades viola o **Princípio da Responsabilidade Única (Single Responsibility Principle)**.
+     **Ferramenta:** Deepscan
+     **Status:** Corrigido em Sprint 4
 
-### 2. Large Component
+### 3. Large Component
 
 -   **Descrição:** Um "Componente Grande" concentra muitos estados, lógicas de UI, efeitos colaterais e renderização em um único arquivo. Isso o torna frágil, difícil de testar e quase impossível de reutilizar.
 -   **Localização:** O arquivo `frontend/app/review/[deckId].tsx` é um exemplo claro deste problema.
@@ -29,15 +45,7 @@ Este documento detalha três code smells identificados no código do projeto, ex
     8.  A lógica de renderização do feedback.
     9.  Toda a estilização do componente.
     Essa complexidade em um único arquivo dificulta a manutenção. Por exemplo, uma mudança no estilo do botão de rodapé exige a rolagem por centenas de linhas de lógica de estado.
+     **Ferramenta:** Deepscan
+     **Status:** Corrigido em Sprint 4
 
-### 3. Duplicated Code
 
--   **Descrição:** Ocorre quando o mesmo bloco de código (ou um muito semelhante) aparece em vários lugares. A duplicação de código é perigosa porque, se for necessário corrigir um bug ou fazer uma alteração, é preciso lembrar de atualizar todos os locais, o que frequentemente não acontece.
--   **Localização:** No arquivo `backend/api/routes/review.ts`, a lógica para criar uma sessão de revisão está duplicada entre a rota `GET /session/general` e a rota `GET /deck/:deckId`.
--   **Problema:** Ambas as rotas realizam os seguintes passos:
-    1.  Identificam um conjunto de cartões (seja geral ou de um deck específico).
-    2.  Obtêm o progresso do usuário para esses cartões.
-    3.  Iteram sobre os cartões selecionados.
-    4.  Chamam a função `createQuestionData` para cada cartão.
-    5.  Retornam a lista de `sessionQuestions`.
-    Embora a lógica para *selecionar* os cartões seja diferente, o processo subsequente de *transformá-los* em questões é idêntico e poderia ser extraído para uma função compartilhada, evitando a repetição do `Promise.all` e da lógica de mapeamento.
