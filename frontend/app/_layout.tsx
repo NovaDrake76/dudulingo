@@ -39,7 +39,7 @@ function useProtectedRoute(isAuthenticated: boolean) {
   const router = useRouter();
 
   useEffect(() => {
-    if (segments.length === 0) {
+    if (!segments || segments.every(segment => !segment)) {
       return;
     }
 
