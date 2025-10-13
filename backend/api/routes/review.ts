@@ -50,8 +50,6 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
   const questionData: any = {
     cardId: card._id,
     questionType: questionType,
-    // The correct answer is always the English word the user is learning
-    correctAnswer: card.answer, 
   };
 
   const wrongOptions = await getMultipleChoiceOptions(card._id.toString(), deckId, card.answer)
@@ -64,18 +62,21 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
       questionData.imageUrl = card.imageUrl;
       questionData.word = card.answer; // "Cat"
       questionData.options = allOptions.map((opt: ICard) => opt.prompt); // Options: "Gato", "Cachorro", ...
+      questionData.correctAnswer = card.prompt; // CORRECT ANSWER IS THE TRANSLATION
       break;
 
     case 'image_to_word_mc':
       questionData.prompt = "What is this?";
       questionData.imageUrl = card.imageUrl;
       questionData.options = allOptions.map((opt: ICard) => opt.answer); // Options: "Cat", "Dog", ...
+      questionData.correctAnswer = card.answer; // Correct answer is the word
       break;
 
     case 'word_to_translation_mc':
       questionData.prompt = "Translate this word:";
       questionData.word = card.answer; // "Cat"
       questionData.options = allOptions.map((opt: ICard) => opt.prompt); // Options: "Gato", "Cachorro", ...
+      questionData.correctAnswer = card.prompt; // CORRECT ANSWER IS THE TRANSLATION
       break;
 
     case 'word_to_image_mc':
@@ -85,17 +86,18 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
         text: opt.answer, // Text is used for internal checking
         imageUrl: opt.imageUrl,
       }));
-      // The correct answer is still the word, not the image URL
-      questionData.correctAnswer = card.answer;
+      questionData.correctAnswer = card.answer; // Correct answer is the word
       break;
 
     case 'image_to_type_answer':
       questionData.prompt = "What is this in English?";
       questionData.imageUrl = card.imageUrl;
+      questionData.correctAnswer = card.answer;
       break;
 
     case 'translation_to_type_answer':
       questionData.prompt = `How do you say "${card.prompt}" in English?`;
+      questionData.correctAnswer = card.answer;
       break;
   }
   
