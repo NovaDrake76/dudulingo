@@ -22,8 +22,8 @@ const seedDatabase = async () => {
     console.log('Inserting decks...')
     const decksToCreate = decks.map((deck) => ({
       ...deck,
-      ownerId: createdUsers[0]._id, 
-      cards: createdCards.map((c) => c._id), 
+      ownerId: createdUsers[0]._id,
+      cards: createdCards.map((c) => c._id),
     }))
     await Deck.insertMany(decksToCreate)
 

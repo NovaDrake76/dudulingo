@@ -38,7 +38,6 @@ const getMultipleChoiceOptions = async (cardId: string, deckId: string, correctA
   return wrongOptions
 }
 
-
 const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardProgress>) => {
   const deck = await Deck.findOne({ cards: card._id })
   if (!deck) {
@@ -50,7 +49,7 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
   const questionData: any = {
     cardId: card._id,
     questionType: questionType,
-  };
+  }
 
   const wrongOptions = await getMultipleChoiceOptions(card._id.toString(), deckId, card.answer)
   const allOptions = [card, ...wrongOptions].sort(() => Math.random() - 0.5)
@@ -58,65 +57,64 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
   // Build question and options based on type
   switch (questionType) {
     case 'image_and_word_to_translation_mc':
-      questionData.prompt = card.prompt; // e.g., "O que é isto?"
-      questionData.imageUrl = card.imageUrl;
-      questionData.word = card.answer; // "Cat"
-      questionData.options = allOptions.map((opt: ICard) => opt.prompt); // Options: "Gato", "Cachorro", ...
-      questionData.correctAnswer = card.prompt; // CORRECT ANSWER IS THE TRANSLATION
-      break;
+      questionData.prompt = card.prompt // e.g., "O que é isto?"
+      questionData.imageUrl = card.imageUrl
+      questionData.word = card.answer // "Cat"
+      questionData.options = allOptions.map((opt: ICard) => opt.prompt) // Options: "Gato", "Cachorro", ...
+      questionData.correctAnswer = card.prompt // CORRECT ANSWER IS THE TRANSLATION
+      break
 
     case 'image_to_word_mc':
-      questionData.prompt = "What is this?";
-      questionData.imageUrl = card.imageUrl;
-      questionData.options = allOptions.map((opt: ICard) => opt.answer); // Options: "Cat", "Dog", ...
-      questionData.correctAnswer = card.answer; // Correct answer is the word
-      break;
+      questionData.prompt = 'What is this?'
+      questionData.imageUrl = card.imageUrl
+      questionData.options = allOptions.map((opt: ICard) => opt.answer) // Options: "Cat", "Dog", ...
+      questionData.correctAnswer = card.answer // Correct answer is the word
+      break
 
     case 'word_to_translation_mc':
-      questionData.prompt = "Translate this word:";
-      questionData.word = card.answer; // "Cat"
-      questionData.options = allOptions.map((opt: ICard) => opt.prompt); // Options: "Gato", "Cachorro", ...
-      questionData.correctAnswer = card.prompt; // CORRECT ANSWER IS THE TRANSLATION
-      break;
+      questionData.prompt = 'Translate this word:'
+      questionData.word = card.answer // "Cat"
+      questionData.options = allOptions.map((opt: ICard) => opt.prompt) // Options: "Gato", "Cachorro", ...
+      questionData.correctAnswer = card.prompt // CORRECT ANSWER IS THE TRANSLATION
+      break
 
     case 'word_to_image_mc':
-      questionData.prompt = "Which image represents this word?";
-      questionData.word = card.answer; // "Cat"
+      questionData.prompt = 'Which image represents this word?'
+      questionData.word = card.answer // "Cat"
       questionData.options = allOptions.map((opt: ICard) => ({
         text: opt.answer, // Text is used for internal checking
         imageUrl: opt.imageUrl,
-      }));
-      questionData.correctAnswer = card.answer; // Correct answer is the word
-      break;
+      }))
+      questionData.correctAnswer = card.answer // Correct answer is the word
+      break
 
     case 'image_to_type_answer':
-      questionData.prompt = "What is this in English?";
-      questionData.imageUrl = card.imageUrl;
-      questionData.correctAnswer = card.answer;
-      break;
+      questionData.prompt = 'What is this in English?'
+      questionData.imageUrl = card.imageUrl
+      questionData.correctAnswer = card.answer
+      break
 
     case 'translation_to_type_answer':
-      questionData.prompt = `How do you say "${card.prompt}" in English?`;
-      questionData.correctAnswer = card.answer;
-      break;
+      questionData.prompt = `How do you say "${card.prompt}" in English?`
+      questionData.correctAnswer = card.answer
+      break
   }
-  
+
   // This is the "correct answer" data for the flip-card feedback
   questionData.feedback = {
-      word: card.answer,
-      translation: card.prompt,
-      imageUrl: card.imageUrl
+    word: card.answer,
+    translation: card.prompt,
+    imageUrl: card.imageUrl,
   }
 
-  return questionData;
+  return questionData
 }
-
 
 // --- UPDATED: General Review Session Logic ---
 router.get('/session/general', async (req: any, res) => {
   try {
-    const userId = (req.user as IUser)._id;
-    const sessionSize = 10;
+    const userId = (req.user as IUser)._id
+    const sessionSize = 10
 
     // 1. Prioritize cards that are due for review
     const dueProgress = await UserCardProgress.find({
@@ -125,10 +123,10 @@ router.get('/session/general', async (req: any, res) => {
     })
       .sort({ nextReviewAt: 1 })
       .limit(sessionSize)
-      .populate<{ cardId: ICard }>('cardId');
+      .populate<{ cardId: ICard }>('cardId')
 
-    let sessionProgress = dueProgress;
-    const seenCardIds = new Set(dueProgress.map((p) => p.cardId._id.toString()));
+    let sessionProgress = dueProgress
+    const seenCardIds = new Set(dueProgress.map((p) => p.cardId._id.toString()))
 
     // 2. If not enough due cards, add cards the user is still learning
     if (sessionProgress.length < sessionSize) {
@@ -138,37 +136,37 @@ router.get('/session/general', async (req: any, res) => {
       })
         .sort({ repetitions: 1, nextReviewAt: 1 })
         .limit(sessionSize - sessionProgress.length)
-        .populate<{ cardId: ICard }>('cardId');
-      
-      sessionProgress = [...sessionProgress, ...learningProgress];
-      learningProgress.forEach(p => seenCardIds.add(p.cardId._id.toString()));
+        .populate<{ cardId: ICard }>('cardId')
+
+      sessionProgress = [...sessionProgress, ...learningProgress]
+      learningProgress.forEach((p) => seenCardIds.add(p.cardId._id.toString()))
     }
-    
+
     // 3. If still not enough, add brand new cards the user has never seen
-     if (sessionProgress.length < sessionSize) {
-        const userDecks = await Deck.find({ _id: { $in: (await UserCardProgress.distinct('deckId', { userId })) } });
-        const allUserCardIds = userDecks.flatMap(deck => deck.cards);
+    if (sessionProgress.length < sessionSize) {
+      const userDecks = await Deck.find({
+        _id: { $in: await UserCardProgress.distinct('deckId', { userId }) },
+      })
+      const allUserCardIds = userDecks.flatMap((deck) => deck.cards)
 
-        const newCards = await Card.find({ 
-            _id: { $in: allUserCardIds, $nin: Array.from(seenCardIds) } 
-        }).limit(sessionSize - sessionProgress.length);
-        
-        const newProgress = newCards.map(card => ({ cardId: card, repetitions: 0 }));
-        sessionProgress = [...sessionProgress, ...newProgress as any];
+      const newCards = await Card.find({
+        _id: { $in: allUserCardIds, $nin: Array.from(seenCardIds) },
+      }).limit(sessionSize - sessionProgress.length)
+
+      const newProgress = newCards.map((card) => ({ cardId: card, repetitions: 0 }))
+      sessionProgress = [...sessionProgress, ...(newProgress as any)]
     }
-    
+
     const sessionQuestions = await Promise.all(
-        sessionProgress.map((progress) => createQuestionData(progress.cardId, progress))
-    );
-    
-    res.json({ cards: sessionQuestions });
+      sessionProgress.map((progress) => createQuestionData(progress.cardId, progress))
+    )
 
+    res.json({ cards: sessionQuestions })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Failed to create general review session' });
+    console.error(err)
+    res.status(500).json({ error: 'Failed to create general review session' })
   }
-});
-
+})
 
 // Get review session for a specific deck
 router.get('/deck/:deckId', async (req: any, res) => {

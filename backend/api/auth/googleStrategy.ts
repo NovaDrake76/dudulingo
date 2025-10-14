@@ -20,9 +20,11 @@ async function verify(
 const options = {
   clientID: process.env.GOOGLE_CLIENT_ID || '',
   clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-  callbackURL: process.env.IS_DEV ? `http://localhost:8000/auth/google/callback` : `${process.env.API_URL}/auth/google/callback`,
+  callbackURL: process.env.IS_DEV
+    ? `http://localhost:8000/auth/google/callback`
+    : `${process.env.API_URL}/auth/google/callback`,
 
-  passReqToCallback: true as true,
+  passReqToCallback: true as const,
 }
 
 export default new Strategy(options, verify)

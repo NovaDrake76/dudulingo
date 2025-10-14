@@ -14,7 +14,6 @@ router.get('/me', (req: any, res) => {
   res.json(req.user)
 })
 
-
 router.post('/language', async (req: any, res) => {
   try {
     const userId = req.user.id
