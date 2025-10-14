@@ -1,7 +1,3 @@
-Of course, here is the complete documentation for the Repecards project.
-
----
-
 # Repecards Documentation
 
 Welcome to the official documentation for Repecards, a language-learning app designed to help users memorize new words efficiently through spaced repetition.
@@ -132,23 +128,3 @@ Authentication is handled via Google OAuth 2.0. The `useAuth` hook provides the 
     * `AnswerOptions`: Renders multiple-choice options.
     * `AnswerInput`: A text input for typed answers.
     * `ReviewFooter`: The footer containing the "Check" and "Next" buttons.
-
----
-
-## 5. Code Quality and Refactoring
-
-The project has undergone several refactorings to improve code quality and address identified "code smells."
-
-### 5.1. Identified Code Smells
-
-* **Duplicated Code:** Logic for creating review sessions was duplicated across two different routes in `backend/api/routes/review.ts`.
-* **Long Method:** The `GET /session/general` route contained a large, complex block of code responsible for fetching and prioritizing cards from multiple sources.
-* **Large Component:** The main review screen component (`frontend/app/review/[deckId].tsx`) managed too many responsibilities, including state management, animations, and rendering logic for various question types.
-
-### 5.2. Applied Refactorings
-
-* **Extract Function:** The duplicated logic for building session questions was extracted into a shared `buildSessionQuestions` function.
-* **Extract Method:** The long method in the general review session route was broken down into smaller, more descriptive functions (`getDueCards`, `getLearningCards`, `getNewCards`).
-* **Extract Component:** The large review screen component was decomposed into smaller, focused components, each responsible for a specific part of the UI.
-
-These refactorings have resulted in a more modular, maintainable, and readable codebase.
