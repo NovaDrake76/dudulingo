@@ -71,10 +71,16 @@ export default function Learn() {
         </View>
       )}
 
+  
       <View style={styles.actionsContainer}>
+        {
+          stats && stats.totalWords > 0 && (
+        
         <Pressable style={styles.primaryButton} onPress={handleStartReview}>
           <Text style={styles.primaryButtonText}>{i18n.t('startReview')}</Text>
         </Pressable>
+        )
+        }
 
         <Pressable
           style={styles.secondaryButton}

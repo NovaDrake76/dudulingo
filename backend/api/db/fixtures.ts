@@ -66,18 +66,7 @@ const commonWords = [
   { answer: 'what', prompt: 'o que, qual' },
 ]
 
-// Mapeia as palavras comuns para o formato de card
-const commonWordCards = commonWords.map((word) => ({
-  type: 'basic' as const,
-  level: 1,
-  prompt: word.prompt,
-  answer: word.answer,
-  lang: 'pt-BR',
-  // imageUrl não é necessário para palavras comuns
-}))
-
-export const cards = [
-  // Cards de Animais (existentes)
+const animalCards = [
   {
     type: 'basic',
     level: 1,
@@ -183,5 +172,15 @@ export const cards = [
     lang: 'pt-BR',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Nokota_Horses_cropped.jpg',
   },
-  ...commonWordCards,
 ]
+
+// Mapeia as palavras comuns para o formato de card
+const commonWordCards = commonWords.map((word) => ({
+  type: 'basic' as const,
+  level: 1,
+  prompt: word.prompt,
+  answer: word.answer,
+  lang: 'pt-BR',
+}))
+
+export const cards = [...animalCards, ...commonWordCards]

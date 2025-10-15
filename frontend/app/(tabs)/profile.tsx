@@ -42,13 +42,11 @@ export default function Profile() {
     router.replace('/auth/sign-in');
   };
 
-  // Changes the app's display language
   const changeLocale = (newLocale: string) => {
     setLocale(newLocale);
     setLocaleState(newLocale);
   };
   
-  // Helper to get the full language name from its code
   const getLanguageName = (code?: string) => {
     if (code === 'en') return 'English';
     if (code === 'pt-BR') return 'Português';
@@ -78,6 +76,7 @@ export default function Profile() {
 
   return (
     <View style={styles.container}>
+
       {user.photoUrl ? (
         <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
       ) : (

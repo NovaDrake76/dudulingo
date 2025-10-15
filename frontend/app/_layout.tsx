@@ -39,15 +39,24 @@ function useProtectedRoute(isAuthenticated: boolean) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!segments || segments.every(segment => !segment)) {
+    if ((segments.length as number) === 0) {
+      if (isAuthenticated) {
+        router.replace("/(tabs)/learn");
+      } else {
+        router.replace("/auth/sign-in");
+      }
       return;
     }
 
     const inAuthGroup = segments[0] === "auth";
 
     if (!isAuthenticated && !inAuthGroup) {
+      // if the user is not signed in and not in the auth group,
+      // redirect to the sign-in page.
       router.replace("/auth/sign-in");
-    } else if (isAuthenticated && segments.join('/') === 'auth/sign-in') {
+    } else if (isAuthenticated && inAuthGroup) {
+      // if the user is signed in and in the auth group,
+      // redirect to the main app.
       router.replace("/(tabs)/learn");
     }
   }, [isAuthenticated, segments, router]);

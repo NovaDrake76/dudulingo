@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { api } from '../../services/api';
 import i18n from '../../services/i18n';
@@ -144,12 +144,20 @@ export default function Review() {
     return styles.disabledOption;
   };
 
-  if (loading || !currentQuestion) {
+if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#58cc02" />
       </View>
     );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <View>
+        <Text>No question available.</Text>
+      </View>
+    )
   }
 
   const { questionType, options, feedback, ...questionContent } = currentQuestion;
