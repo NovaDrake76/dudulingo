@@ -37,7 +37,7 @@ export function calculateSrs(
     }
   }
 
-  // Calculate the next review date
+  // calculate the next review date
   const now = new Date()
   const nextReviewDate = new Date(now.setDate(now.getDate() + progress.interval))
 

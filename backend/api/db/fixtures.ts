@@ -16,9 +16,68 @@ export const decks = [
     name: 'Animais',
     description: 'Uma coleção de animais comuns em inglês.',
   },
+  {
+    name: '40 Palavras Mais Comuns',
+    description: 'As 40 palavras mais utilizadas na língua inglesa.',
+  },
 ]
 
+// Lista de palavras mais comuns
+const commonWords = [
+  { answer: 'the', prompt: 'o, a, os, as' },
+  { answer: 'be', prompt: 'ser, estar' },
+  { answer: 'to', prompt: 'para, a' },
+  { answer: 'of', prompt: 'de' },
+  { answer: 'and', prompt: 'e' },
+  { answer: 'a', prompt: 'um, uma' },
+  { answer: 'in', prompt: 'em, no, na' },
+  { answer: 'that', prompt: 'aquele, essa, isso, que' },
+  { answer: 'have', prompt: 'ter' },
+  { answer: 'I', prompt: 'eu' },
+  { answer: 'it', prompt: 'isto, isso' },
+  { answer: 'for', prompt: 'para, por' },
+  { answer: 'not', prompt: 'não' },
+  { answer: 'on', prompt: 'em, sobre' },
+  { answer: 'with', prompt: 'com' },
+  { answer: 'he', prompt: 'ele' },
+  { answer: 'as', prompt: 'como, enquanto' },
+  { answer: 'you', prompt: 'você' },
+  { answer: 'do', prompt: 'fazer' },
+  { answer: 'at', prompt: 'em, a, às' },
+  { answer: 'this', prompt: 'este, esta, isto' },
+  { answer: 'but', prompt: 'mas, porém' },
+  { answer: 'his', prompt: 'dele' },
+  { answer: 'by', prompt: 'por, perto de' },
+  { answer: 'from', prompt: 'de, desde' },
+  { answer: 'they', prompt: 'eles, elas' },
+  { answer: 'we', prompt: 'nós' },
+  { answer: 'say', prompt: 'dizer' },
+  { answer: 'her', prompt: 'dela' },
+  { answer: 'she', prompt: 'ela' },
+  { answer: 'or', prompt: 'ou' },
+  { answer: 'an', prompt: 'um, uma' },
+  { answer: 'will', prompt: '(futuro)' },
+  { answer: 'my', prompt: 'meu, minha' },
+  { answer: 'one', prompt: 'um, uma (número)' },
+  { answer: 'all', prompt: 'todo, toda, todos, todas' },
+  { answer: 'would', prompt: '(condicional)' },
+  { answer: 'there', prompt: 'lá, ali' },
+  { answer: 'their', prompt: 'deles, delas' },
+  { answer: 'what', prompt: 'o que, qual' },
+]
+
+// Mapeia as palavras comuns para o formato de card
+const commonWordCards = commonWords.map((word) => ({
+  type: 'basic' as const,
+  level: 1,
+  prompt: word.prompt,
+  answer: word.answer,
+  lang: 'pt-BR',
+  // imageUrl não é necessário para palavras comuns
+}))
+
 export const cards = [
+  // Cards de Animais (existentes)
   {
     type: 'basic',
     level: 1,
@@ -124,4 +183,5 @@ export const cards = [
     lang: 'pt-BR',
     imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Nokota_Horses_cropped.jpg',
   },
+  ...commonWordCards,
 ]

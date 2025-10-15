@@ -13,7 +13,7 @@ Este documento detalha três code smells identificados no código do projeto, ex
     4.  Chamam a função `createQuestionData` para cada cartão.
     5.  Retornam a lista de `sessionQuestions`.
     Embora a lógica para *selecionar* os cartões seja diferente, o processo subsequente de *transformá-los* em questões é idêntico e poderia ser extraído para uma função compartilhada, evitando a repetição do `Promise.all` e da lógica de mapeamento.
-     **Ferramenta:** Deepscan
+     **Ferramenta:** Nenhuma
      **Status:** Corrigido em Sprint 2
 
 ### 2. Long Method
@@ -45,7 +45,7 @@ Este documento detalha três code smells identificados no código do projeto, ex
     8.  A lógica de renderização do feedback.
     9.  Toda a estilização do componente.
     Essa complexidade em um único arquivo dificulta a manutenção. Por exemplo, uma mudança no estilo do botão de rodapé exige a rolagem por centenas de linhas de lógica de estado.
-     **Ferramenta:** Deepscan
+     **Ferramenta:** Nenhuma
      **Status:** Corrigido em Sprint 4
 
 

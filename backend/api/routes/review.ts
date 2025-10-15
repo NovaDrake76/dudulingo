@@ -54,7 +54,7 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
   const wrongOptions = await getMultipleChoiceOptions(card._id.toString(), deckId, card.answer)
   const allOptions = [card, ...wrongOptions].sort(() => Math.random() - 0.5)
 
-  // Build question and options based on type
+  // build question and options based on type
   switch (questionType) {
     case 'image_and_word_to_translation_mc':
       questionData.prompt = card.prompt // e.g., "O que é isto?"
@@ -82,7 +82,7 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
       questionData.prompt = 'Which image represents this word?'
       questionData.word = card.answer // "Cat"
       questionData.options = allOptions.map((opt: ICard) => ({
-        text: opt.answer, // Text is used for internal checking
+        text: opt.answer, // text is used for internal checking
         imageUrl: opt.imageUrl,
       }))
       questionData.correctAnswer = card.answer // Correct answer is the word
@@ -100,7 +100,7 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
       break
   }
 
-  // This is the "correct answer" data for the flip-card feedback
+  // this is the "correct answer" data for the flip-card feedback
   questionData.feedback = {
     word: card.answer,
     translation: card.prompt,
@@ -110,13 +110,12 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
   return questionData
 }
 
-// --- UPDATED: General Review Session Logic ---
 router.get('/session/general', async (req: any, res) => {
   try {
     const userId = (req.user as IUser)._id
     const sessionSize = 10
 
-    // 1. Prioritize cards that are due for review
+    // 1. prioritize cards that are due for review
     const dueProgress = await UserCardProgress.find({
       userId,
       nextReviewAt: { $lte: new Date() },

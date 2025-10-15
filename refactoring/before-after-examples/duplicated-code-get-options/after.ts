@@ -1,4 +1,4 @@
-// Nova função helper
+// new helper function
 async function buildSessionQuestions(cards: ICard[], progressMap: Map<string, IUserCardProgress>) {
     return Promise.all(
       cards.map(async (card) => {
@@ -11,11 +11,10 @@ async function buildSessionQuestions(cards: ICard[], progressMap: Map<string, IU
     );
 }
 
-// Rota 1 Refatorada
+// endpoint 1 refactored
 router.get('/session/general', async (req: any, res) => {
-  // ... (lógica para encontrar 'sessionProgress')
+  // ... find 'sessionProgress')
   
-  // Cria um map a partir do array de progresso para a função helper
   const progressMap = new Map(sessionProgress.map((p) => [p.cardId._id.toString(), p]));
   const cards = sessionProgress.map(p => p.cardId);
 
@@ -23,9 +22,9 @@ router.get('/session/general', async (req: any, res) => {
   res.json({ cards: sessionQuestions });
 });
 
-// Rota 2 Refatorada
+// endpoint 2 refactored
 router.get('/deck/:deckId', async (req: any, res) => {
-  // ... (lógica para encontrar 'sessionCards' e 'progressMap')
+  // ... find 'sessionCards' and 'progressMap'
    const sessionQuestions = await buildSessionQuestions(sessionCards, progressMap);
    res.json({ deckId, cards: sessionQuestions });
 });

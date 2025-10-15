@@ -42,7 +42,7 @@ const handleGoogleLogin = async () => {
       </View>
       <View style={styles.card}>
         <Image
-          source={require('../../assets/images/dudulingo.png')}
+          source={require('../../assets/images/repecardsLogo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -115,8 +115,8 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   logo: {
-    width: 110,
-    height: 110,
+    width: 200,
+    height: 200,
     marginBottom: 24,
   },
   title: {

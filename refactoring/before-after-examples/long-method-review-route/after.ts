@@ -1,5 +1,3 @@
-// Funções extraídas para um novo arquivo de serviço, ex: 'review-service.ts'
-
 async function getDueCards(userId: string, limit: number) {
   return UserCardProgress.find({
     userId,
@@ -32,7 +30,6 @@ async function getNewCards(userId: string, limit: number, excludedIds: string[])
 }
 
 
-// Rota refatorada em backend/api/routes/review.ts
 router.get('/session/general', async (req: any, res) => {
   try {
     const userId = (req.user as IUser)._id;
@@ -41,19 +38,19 @@ router.get('/session/general', async (req: any, res) => {
     let sessionProgress: any[] = [];
     const seenCardIds = new Set<string>();
 
-    // 1. Get due cards
+    // get due cards
     const dueProgress = await getDueCards(userId, sessionSize);
     sessionProgress.push(...dueProgress);
     dueProgress.forEach(p => seenCardIds.add(p.cardId._id.toString()));
 
-    // 2. Fill with learning cards if needed
+    // fill with learning cards if needed
     if (sessionProgress.length < sessionSize) {
       const learningProgress = await getLearningCards(userId, sessionSize - sessionProgress.length, Array.from(seenCardIds));
       sessionProgress.push(...learningProgress);
       learningProgress.forEach(p => seenCardIds.add(p.cardId._id.toString()));
     }
 
-    // 3. Fill with new cards if still needed
+    // fill with new cards if still needed
     if (sessionProgress.length < sessionSize) {
       const newProgress = await getNewCards(userId, sessionSize - sessionProgress.length, Array.from(seenCardIds));
       sessionProgress.push(...newProgress);

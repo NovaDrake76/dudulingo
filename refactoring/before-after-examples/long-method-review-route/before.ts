@@ -1,11 +1,10 @@
-// Rota original em backend/api/routes/review.ts
 
 router.get('/session/general', async (req: any, res) => {
   try {
     const userId = (req.user as IUser)._id;
     const sessionSize = 10;
 
-    // 1. Prioritize cards that are due for review
+    // prioritize cards that are due for review
     const dueProgress = await UserCardProgress.find({
       userId,
       nextReviewAt: { $lte: new Date() },
@@ -17,7 +16,7 @@ router.get('/session/general', async (req: any, res) => {
     let sessionProgress = dueProgress;
     const seenCardIds = new Set(dueProgress.map((p) => p.cardId._id.toString()));
 
-    // 2. If not enough due cards, add cards the user is still learning
+    // if not enough due cards, add cards the user is still learning
     if (sessionProgress.length < sessionSize) {
       const learningProgress = await UserCardProgress.find({
         userId,
@@ -31,7 +30,7 @@ router.get('/session/general', async (req: any, res) => {
       learningProgress.forEach(p => seenCardIds.add(p.cardId._id.toString()));
     }
     
-    // 3. If still not enough, add brand new cards the user has never seen
+    // if still not enough, add brand new cards the user has never seen
      if (sessionProgress.length < sessionSize) {
         const userDecks = await Deck.find({ _id: { $in: (await UserCardProgress.distinct('deckId', { userId })) } });
         const allUserCardIds = userDecks.flatMap(deck => deck.cards);
