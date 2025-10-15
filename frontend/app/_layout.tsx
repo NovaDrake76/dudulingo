@@ -18,12 +18,15 @@ import React, {
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { api } from "../services/api";
 import { getToken, logout } from "../services/auth";
 import i18n, { getLocale } from "../services/i18n";
 
+// We expand the context to include a function to handle the session
 const AuthContext = createContext<{
   isAuthenticated: boolean;
   setToken: (token: string | null) => Promise<void>;
+  handleUserSession: () => Promise<void>; // New function to handle redirects
 } | null>(null);
 
 export function useAuth() {
@@ -34,30 +37,17 @@ export function useAuth() {
   return context;
 }
 
+
 function useProtectedRoute(isAuthenticated: boolean) {
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    if ((segments.length as number) === 0) {
-      if (isAuthenticated) {
-        router.replace("/(tabs)/learn");
-      } else {
-        router.replace("/auth/sign-in");
-      }
-      return;
-    }
-
+    // useSegments always returns at least one segment, so we can read segments[0] directly.
     const inAuthGroup = segments[0] === "auth";
 
     if (!isAuthenticated && !inAuthGroup) {
-      // if the user is not signed in and not in the auth group,
-      // redirect to the sign-in page.
       router.replace("/auth/sign-in");
-    } else if (isAuthenticated && inAuthGroup) {
-      // if the user is signed in and in the auth group,
-      // redirect to the main app.
-      router.replace("/(tabs)/learn");
     }
   }, [isAuthenticated, segments, router]);
 }
@@ -79,6 +69,8 @@ function RootLayoutNav() {
       />
       <Stack.Screen name="review/[deckId]" options={{ title: "Review" }} />
       <Stack.Screen name="auth/sign-in" options={{ headerShown: false }} />
+      {/* The callback screen is now handled cleanly */}
+      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
   );
 }
@@ -87,6 +79,27 @@ export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme();
+  const router = useRouter();
+
+  // This is the centralized logic to decide where an authenticated user should go.
+  const handleUserSession = async () => {
+    try {
+      const user = await api.getMe();
+      if (user && user.selectedLanguage) {
+        // If language is selected, they are ready for the main app.
+        // The learn screen will handle prompting them to select a deck if needed.
+        router.replace("/(tabs)/learn");
+      } else {
+        // If no language is selected, they must go through the setup flow.
+        router.replace("/auth/select-language");
+      }
+    } catch (error) {
+      console.error("Failed to fetch user data, logging out:", error);
+      // If fetching the user fails (e.g., bad token), log them out.
+      await setToken(null);
+      router.replace('/auth/sign-in');
+    }
+  };
 
   useEffect(() => {
     async function setup() {
@@ -95,11 +108,17 @@ export default function RootLayout() {
         const token = await getToken();
         if (token) {
           setIsAuthenticated(true);
+          // On app startup, handle the user session immediately.
+          await handleUserSession();
+        } else {
+          setIsAuthenticated(false);
+          // If no token, the protected route hook will redirect to sign-in.
         }
         const locale = await getLocale();
         i18n.locale = locale;
       } catch (e) {
         console.error("Error setting up root layout:", e);
+        await setToken(null); // Logout on any critical error
       } finally {
         setLoading(false);
         await SplashScreen.hideAsync();
@@ -119,11 +138,11 @@ export default function RootLayout() {
   };
 
   if (loading) {
-    return null;
+    return null; 
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setToken }}>
+    <AuthContext.Provider value={{ isAuthenticated, setToken, handleUserSession }}>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
         <RootLayoutNav />
         <StatusBar style="auto" />
