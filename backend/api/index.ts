@@ -10,7 +10,13 @@ import decksRouter from './routes/decks.ts'
 import reviewRouter from './routes/review.ts'
 import usersRouter from './routes/users.ts'
 
-connectDB()
+
+try {
+  connectDB()
+} catch (error) {
+  console.error("Failed to start code")
+  process.exit(1)
+}
 
 const PORT = process.env.PORT || 8000
 const app = express()
