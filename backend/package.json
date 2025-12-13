@@ -8,6 +8,7 @@
     "dev": "node --env-file=.env --watch api/index.ts",
     "lint": "eslint \"api/**/*.{ts,js}\" --max-warnings=0",
     "format": "prettier --write \"api/**/*.{ts,js,json,md}\"",
+    "test": "vitest",
     "db:seed": "tsx api/db/seed.ts",
     "db:setup": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
@@ -43,9 +44,12 @@
     "eslint-plugin-prettier": "^5.5.4",
     "globals": "^16.4.0",
     "install": "^0.13.0",
+    "mongodb-memory-server": "^10.4.1",
     "npm": "^11.6.1",
     "prettier": "^3.6.2",
+    "supertest": "^7.1.4",
     "tsx": "^4.20.6",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.15"
   }
 }
