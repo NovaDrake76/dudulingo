@@ -1,17 +1,20 @@
-
-
-import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { api } from '../../services/api';
-import i18n from '../../services/i18n';
-import { AnswerInput } from './components/AnswerInput';
-import { AnswerOptions } from './components/AnswerOptions';
-import { FeedbackDisplay } from './components/FeedbackDisplay';
-import { QuestionDisplay } from './components/QuestionDisplay';
-import { ReviewFooter } from './components/ReviewFooter';
-import { styles } from './components/styles';
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
+import Animated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
+import { api } from "../../services/api";
+import i18n from "../../services/i18n";
+import { AnswerInput } from "./components/AnswerInput";
+import { AnswerOptions } from "./components/AnswerOptions";
+import { FeedbackDisplay } from "./components/FeedbackDisplay";
+import { QuestionDisplay } from "./components/QuestionDisplay";
+import { ReviewFooter } from "./components/ReviewFooter";
+import { styles } from "./components/styles";
 
 type QuestionData = {
   cardId: string;
@@ -32,8 +35,8 @@ export default function Review() {
   const { deckId } = useLocalSearchParams();
   const [sessionCards, setSessionCards] = useState<QuestionData[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string>('');
-  const [typedAnswer, setTypedAnswer] = useState<string>('');
+  const [selectedAnswer, setSelectedAnswer] = useState<string>("");
+  const [typedAnswer, setTypedAnswer] = useState<string>("");
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -56,21 +59,21 @@ export default function Review() {
       setLoading(true);
       try {
         const sessionData =
-          deckId === 'general'
+          deckId === "general"
             ? await api.getGeneralReviewSession()
             : await api.getDeckReviewSession(deckId as string);
 
         if (sessionData.cards && sessionData.cards.length > 0) {
           setSessionCards(sessionData.cards);
         } else {
-          Alert.alert(i18n.t('allDone'), i18n.t('noCardsToReview'), [
-            { text: 'OK', onPress: () => router.back() },
+          Alert.alert(i18n.t("allDone"), i18n.t("noCardsToReview"), [
+            { text: "OK", onPress: () => router.back() },
           ]);
         }
       } catch (error) {
-        console.error('Failed to start session:', error);
-        Alert.alert(i18n.t('error'), i18n.t('failedToStartSession'), [
-          { text: 'OK', onPress: () => router.back() },
+        console.error("Failed to start session:", error);
+        Alert.alert(i18n.t("error"), i18n.t("failedToStartSession"), [
+          { text: "OK", onPress: () => router.back() },
         ]);
       } finally {
         setLoading(false);
@@ -81,7 +84,9 @@ export default function Review() {
 
   const checkAnswer = (answer: string) => {
     if (!currentQuestion) return;
-    const isAnswerCorrect = answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    const isAnswerCorrect =
+      answer.trim().toLowerCase() ===
+      currentQuestion.correctAnswer.toLowerCase();
     setIsCorrect(isAnswerCorrect);
     setShowResult(true);
 
@@ -103,7 +108,7 @@ export default function Review() {
 
   const handleNext = async () => {
     if (!currentQuestion) return;
-    const rating = isCorrect ? 'easy' : 'very_hard';
+    const rating = isCorrect ? "easy" : "very_hard";
 
     try {
       await api.submitReview(currentQuestion.cardId, rating);
@@ -112,20 +117,22 @@ export default function Review() {
       if (nextIndex < sessionCards.length) {
         setCurrentQuestionIndex(nextIndex);
       } else {
-        Alert.alert('Session Complete!', "You've finished this review session.", [
-          { text: 'OK', onPress: () => router.replace('/(tabs)/learn') },
-        ]);
+        Alert.alert(
+          "Session Complete!",
+          "You've finished this review session.",
+          [{ text: "OK", onPress: () => router.replace("/(tabs)/learn") }],
+        );
         return;
       }
 
       setShowResult(false);
-      setSelectedAnswer('');
-      setTypedAnswer('');
+      setSelectedAnswer("");
+      setTypedAnswer("");
       setIsCorrect(false);
       flipAnimation.value = 0;
     } catch (error) {
-      console.error('Failed to submit review:', error);
-      Alert.alert(i18n.t('error'), i18n.t('failedToSaveProgress'));
+      console.error("Failed to submit review:", error);
+      Alert.alert(i18n.t("error"), i18n.t("failedToSaveProgress"));
     }
   };
 
@@ -133,7 +140,8 @@ export default function Review() {
     if (!showResult) {
       return {};
     }
-    const isThisTheCorrectAnswer = optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase();
+    const isThisTheCorrectAnswer =
+      optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase();
     const isThisTheSelectedAnswer = optionText === selectedAnswer;
 
     if (isThisTheCorrectAnswer) {
@@ -153,26 +161,32 @@ export default function Review() {
     );
   }
 
-  const { questionType, options, feedback, ...questionContent } = currentQuestion;
+  const { questionType, options, feedback, ...questionContent } =
+    currentQuestion;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.progressText}>
-          {i18n.t('card')} {currentQuestionIndex + 1} {i18n.t('of')} {sessionCards.length}
+          {i18n.t("card")} {currentQuestionIndex + 1} {i18n.t("of")}{" "}
+          {sessionCards.length}
         </Text>
       </View>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View>
-          <Animated.View style={[styles.card, styles.cardFront, frontAnimatedStyle]}>
+          <Animated.View
+            style={[styles.card, styles.cardFront, frontAnimatedStyle]}
+          >
             <QuestionDisplay {...questionContent} />
           </Animated.View>
-          <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
+          <Animated.View
+            style={[styles.card, styles.cardBack, backAnimatedStyle]}
+          >
             {feedback && <FeedbackDisplay feedback={feedback} />}
           </Animated.View>
         </View>
 
-        {questionType?.includes('_mc') && options && (
+        {questionType?.includes("_mc") && options && (
           <AnswerOptions
             options={options}
             showResult={showResult}
@@ -181,7 +195,7 @@ export default function Review() {
           />
         )}
 
-        {questionType?.includes('type_answer') && (
+        {questionType?.includes("type_answer") && (
           <AnswerInput
             typedAnswer={typedAnswer}
             setTypedAnswer={setTypedAnswer}

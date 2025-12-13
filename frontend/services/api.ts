@@ -1,14 +1,17 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getToken } from './auth';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { getToken } from "./auth";
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
 // generic fetch with auth
-const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
+const authenticatedFetch = async (
+  endpoint: string,
+  options: RequestInit = {},
+) => {
   const token = await getToken();
 
   const headers: HeadersInit = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
@@ -20,7 +23,7 @@ const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) =
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error('API Error Response:', errorBody);
+    console.error("API Error Response:", errorBody);
     throw new Error(`API error: ${response.statusText}`);
   }
 
@@ -30,7 +33,7 @@ const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) =
 export const api = {
   // auth
   async saveAuthToken(token: string) {
-    await AsyncStorage.setItem('authToken', token);
+    await AsyncStorage.setItem("authToken", token);
   },
 
   async checkAuth() {
@@ -40,29 +43,29 @@ export const api = {
 
   // user endpoints
   async saveLanguage(language: string) {
-    return authenticatedFetch('/users/language', {
-      method: 'POST',
+    return authenticatedFetch("/users/language", {
+      method: "POST",
       body: JSON.stringify({ language }),
     });
   },
 
   async addDeckToUser(deckId: string) {
     return authenticatedFetch(`/users/decks/${deckId}`, {
-      method: 'POST',
+      method: "POST",
     });
   },
 
   async getUserStats() {
-    return authenticatedFetch('/users/stats');
+    return authenticatedFetch("/users/stats");
   },
 
   async getMe() {
-    return authenticatedFetch('/users/me');
+    return authenticatedFetch("/users/me");
   },
 
   // decks endpoints
   async getAllDecks() {
-    return authenticatedFetch('/decks');
+    return authenticatedFetch("/decks");
   },
 
   async getDeck(deckId: string) {
@@ -71,7 +74,7 @@ export const api = {
 
   // review endpoints
   async getGeneralReviewSession() {
-    return authenticatedFetch('/review/session/general');
+    return authenticatedFetch("/review/session/general");
   },
 
   async getDeckReviewSession(deckId: string) {
@@ -79,10 +82,9 @@ export const api = {
   },
 
   async submitReview(cardId: string, rating: string) {
-    return authenticatedFetch('/review', {
-      method: 'POST',
+    return authenticatedFetch("/review", {
+      method: "POST",
       body: JSON.stringify({ cardId, rating }),
     });
-    
   },
 };

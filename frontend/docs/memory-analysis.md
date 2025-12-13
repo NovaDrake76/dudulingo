@@ -11,10 +11,12 @@ No entanto, isso **não significa** que memory leaks sejam impossíveis. Referê
 ## Ferramentas de Análise
 
 ### 1. React DevTools Profiler
+
 - **Uso:** Detectar componentes que não são desmontados corretamente
 - **Métricas:** Componente mounting/unmounting, re-renders
 
 ### 2. Chrome DevTools Memory Profiler
+
 - **Uso:** Heap snapshots para identificar objetos não coletados
 - **Processo:**
   1. Abrir Chrome DevTools → Memory tab
@@ -24,10 +26,12 @@ No entanto, isso **não significa** que memory leaks sejam impossíveis. Referê
   5. Comparar "Detached DOM nodes" e objetos não GC'd
 
 ### 3. Expo Performance Monitor
+
 - **Uso:** Monitoramento de memória em tempo real no dispositivo
 - **Ativação:** Dev menu → Toggle Performance Monitor
 
 ### 4. Xcode Instruments (iOS)
+
 - **Uso:** Análise profunda de memória e leaks
 - **Ferramentas:** Leaks, Allocations, VM Tracker
 
@@ -38,6 +42,7 @@ No entanto, isso **não significa** que memory leaks sejam impossíveis. Referê
 ### Baseline (Sprint 1)
 
 **Cenário de Teste:** Fluxo completo de usuário por 10 minutos
+
 1. Login
 2. Selecionar idioma
 3. Adicionar deck
@@ -46,13 +51,14 @@ No entanto, isso **não significa** que memory leaks sejam impossíveis. Referê
 6. Logout
 
 **Resultados Iniciais (Medição em iPhone 12):**
+
 ```
 Memória Inicial: 98 MB
 Memória após Login: 124 MB
 Memória após 20 reviews: 182 MB
 Memória após Logout: 156 MB  (deveria voltar para ~100 MB)
 
-Delta após ciclo completo: +58 MB 
+Delta após ciclo completo: +58 MB
 ```
 
 **Diagnóstico:** Memory leak detectado - memória não é liberada após logout
@@ -62,6 +68,7 @@ Delta após ciclo completo: +58 MB
 ## Memory Leak #1: WebBrowser Session não Liberada
 
 ### Identificação
+
 - **Módulo:** `services/auth.ts`
 - **Causa:** `WebBrowser.openAuthSessionAsync()` mantinha referência mesmo após cancelamento
 - **Impacto:** +8MB por tentativa de login cancelada
@@ -69,6 +76,7 @@ Delta após ciclo completo: +58 MB
 ### Heap Snapshot Analysis
 
 **Antes da Correção:**
+
 ```
 Retained Objects após cancelar login 5x:
 
@@ -76,7 +84,7 @@ Retained Objects após cancelar login 5x:
 - EventListener: 15 instances (2 MB)
 - Promise (pending): 5 instances (1 MB)
 
-Total: 43 MB não coletados 
+Total: 43 MB não coletados
 ```
 
 ### Código Problemático (ANTES)
@@ -85,17 +93,18 @@ Total: 43 MB não coletados
 // services/auth.ts
 export const loginWithGoogle = async () => {
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-  
+
   //  Sem cleanup em caso de cancelamento
-  if (result.type !== 'success') {
+  if (result.type !== "success") {
     return { success: false };
   }
-  
+
   return { success: true };
 };
 ```
 
 **Problema:**
+
 - Sessão do WebBrowser ficava "pendurada" em caso de `cancel`, `dismiss` ou `error`
 - Event listeners do Linking.addEventListener não eram removidos
 - Promises pendentes não eram rejeitadas
@@ -104,7 +113,7 @@ export const loginWithGoogle = async () => {
 
 ```typescript
 // services/auth.ts
-import * as WebBrowser from 'expo-web-browser';
+import * as WebBrowser from "expo-web-browser";
 
 //  Completar sessão assim que módulo carrega
 WebBrowser.maybeCompleteAuthSession();
@@ -113,17 +122,17 @@ export const loginWithGoogle = async () => {
   try {
     const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
 
-    if (result.type !== 'success') {
+    if (result.type !== "success") {
       // Cleanup explícito
       await WebBrowser.maybeCompleteAuthSession();
-      return { success: false, error: 'Authentication cancelled' };
+      return { success: false, error: "Authentication cancelled" };
     }
 
     return { success: true };
   } catch (error) {
     //  Cleanup em erro também
     await WebBrowser.maybeCompleteAuthSession();
-    return { success: false, error: 'Unexpected error' };
+    return { success: false, error: "Unexpected error" };
   }
 };
 ```
@@ -131,14 +140,15 @@ export const loginWithGoogle = async () => {
 ### Verificação
 
 **Heap Snapshot após Correção:**
+
 ```
 Retained Objects após cancelar login 5x:
 
-- WebBrowserSession: 0 instances 
-- EventListener: 0 instances 
-- Promise (pending): 0 instances 
+- WebBrowserSession: 0 instances
+- EventListener: 0 instances
+- Promise (pending): 0 instances
 
-Total: 0 MB 
+Total: 0 MB
 ```
 
 **Economia:** 8 MB por ciclo de login/cancelamento
@@ -148,6 +158,7 @@ Total: 0 MB
 ## Memory Leak #2: Event Listeners em useEffect
 
 ### Identificação
+
 - **Módulo:** `app/(tabs)/profile.tsx`
 - **Causa:** `useFocusEffect` sem cleanup function
 - **Impacto:** +2MB por navegação entre tabs
@@ -162,14 +173,15 @@ useFocusEffect(
       const user = await api.getMe();
       setUser(user);
     };
-    
+
     loadData();
     //  Sem cleanup - listener fica ativo
-  }, [])
+  }, []),
 );
 ```
 
 **Problema:**
+
 - Requisições não eram canceladas ao desmontar componente
 - Referência ao `setUser` era mantida mesmo após navegação
 - Múltiplas instâncias do callback ficavam na memória
@@ -184,7 +196,7 @@ const loadUserData = useCallback(async () => {
     const userData = await api.getMe();
     setUser(userData);
   } catch (error) {
-    console.error('Failed to load user:', error);
+    console.error("Failed to load user:", error);
   } finally {
     setLoading(false);
   }
@@ -194,14 +206,14 @@ useFocusEffect(
   useCallback(() => {
     //  Controller para cancelar requisição
     const abortController = new AbortController();
-    
+
     loadUserData();
 
     //  Cleanup function
     return () => {
       abortController.abort();
     };
-  }, [loadUserData])
+  }, [loadUserData]),
 );
 ```
 
@@ -210,16 +222,16 @@ useFocusEffect(
 ```typescript
 // services/api.ts
 const authenticatedFetch = async (
-  endpoint: string, 
-  options: RequestInit & { signal?: AbortSignal } = {}
+  endpoint: string,
+  options: RequestInit & { signal?: AbortSignal } = {},
 ) => {
   const token = await getToken();
-  
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     signal: options.signal, // Suporte para cancelamento
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -236,13 +248,15 @@ const authenticatedFetch = async (
 ### Verificação
 
 **Antes:**
+
 ```
 Memória após navegar Profile → Learn → Profile 10x: 156 MB (+20 MB)
 ```
 
 **Depois:**
+
 ```
-Memória após navegar Profile → Learn → Profile 10x: 138 MB (+2 MB) 
+Memória após navegar Profile → Learn → Profile 10x: 138 MB (+2 MB)
 ```
 
 **Economia:** 18 MB em 10 navegações
@@ -252,6 +266,7 @@ Memória após navegar Profile → Learn → Profile 10x: 138 MB (+2 MB)
 ## Memory Leak #3: Referências Circulares em Cache
 
 ### Identificação
+
 - **Módulo:** `services/i18n.ts`
 - **Causa:** Map de cache mantendo referências de objetos grandes
 - **Impacto:** +12MB após trocar idioma múltiplas vezes
@@ -268,12 +283,13 @@ export const setLocale = async (locale: string) => {
     const translation = await loadTranslation(locale);
     translationCache.set(locale, translation);
   }
-  
+
   i18n.locale = locale;
 };
 ```
 
 **Problema:**
+
 - Cache nunca era limpo
 - Traduções antigas ficavam na memória mesmo se não usadas
 - Objetos de tradução são grandes (~24KB cada)
@@ -298,19 +314,19 @@ const updateCacheUsage = (locale: string) => {
 export const setLocale = async (locale: string) => {
   if (!translationCache.has(locale)) {
     const translation = await loadTranslation(locale);
-    
+
     //  Remover idioma mais antigo se cache cheio
     if (translationCache.size >= MAX_CACHE_SIZE) {
       const oldestLocale = translationCache.keys().next().value;
       translationCache.delete(oldestLocale);
       console.log(`[i18n] Removed ${oldestLocale} from cache`);
     }
-    
+
     translationCache.set(locale, translation);
   } else {
     updateCacheUsage(locale);
   }
-  
+
   i18n.locale = locale;
 };
 
@@ -323,14 +339,16 @@ export const clearTranslationCache = () => {
 ### Verificação
 
 **Antes:**
+
 ```
 Memória após trocar entre 5 idiomas 3x cada: 180 MB
 Cache size: 15 entries (5 idiomas × 3 cópias)
 ```
 
 **Depois:**
+
 ```
-Memória após trocar entre 5 idiomas 3x cada: 146 MB 
+Memória após trocar entre 5 idiomas 3x cada: 146 MB
 Cache size: 3 entries (máximo sempre respeitado)
 ```
 
@@ -345,6 +363,7 @@ Cache size: 3 entries (máximo sempre respeitado)
 **Contexto:** Armazenar cards por ID para acesso rápido
 
 **Antes (Object):**
+
 ```typescript
 const cardsById: { [key: string]: Card } = {};
 
@@ -359,6 +378,7 @@ delete cardsById[cardId];
 ```
 
 **Depois (Map):**
+
 ```typescript
 const cardsById = new Map<string, Card>();
 
@@ -373,6 +393,7 @@ cardsById.delete(cardId);
 ```
 
 **Benefícios:**
+
 - Map é otimizado para operações de chave-valor
 - Delete realmente remove (em Object, deixa undefined)
 - Menos overhead de memória para grandes coleções
@@ -383,6 +404,7 @@ cardsById.delete(cardId);
 **Contexto:** Rastrear IDs de cards já vistos
 
 **Antes (Array):**
+
 ```typescript
 const seenCardIds: string[] = [];
 
@@ -393,6 +415,7 @@ if (!seenCardIds.includes(cardId)) {
 ```
 
 **Depois (Set):**
+
 ```typescript
 const seenCardIds = new Set<string>();
 
@@ -403,6 +426,7 @@ if (!seenCardIds.has(cardId)) {
 ```
 
 **Economia de Memória:**
+
 - Set deduplica automaticamente
 - Menor overhead que Array para conjuntos grandes
 - Operações mais rápidas
@@ -411,24 +435,30 @@ if (!seenCardIds.has(cardId)) {
 
 ## Prevenção de Memory Leaks: Checklist
 
-###  Event Listeners
+### Event Listeners
+
 ```typescript
 useEffect(() => {
-  const handler = () => { /* ... */ };
-  window.addEventListener('resize', handler);
-  
+  const handler = () => {
+    /* ... */
+  };
+  window.addEventListener("resize", handler);
+
   //  SEMPRE remover listener
   return () => {
-    window.removeEventListener('resize', handler);
+    window.removeEventListener("resize", handler);
   };
 }, []);
 ```
 
-###  Timers e Intervals
+### Timers e Intervals
+
 ```typescript
 useEffect(() => {
-  const timer = setTimeout(() => { /* ... */ }, 1000);
-  
+  const timer = setTimeout(() => {
+    /* ... */
+  }, 1000);
+
   //  SEMPRE limpar timeout
   return () => {
     clearTimeout(timer);
@@ -436,13 +466,14 @@ useEffect(() => {
 }, []);
 ```
 
-###  Subscriptions (WebSocket, API Polling)
+### Subscriptions (WebSocket, API Polling)
+
 ```typescript
 useEffect(() => {
   const subscription = api.subscribeToUpdates((data) => {
     setState(data);
   });
-  
+
   //  SEMPRE cancelar subscription
   return () => {
     subscription.unsubscribe();
@@ -450,36 +481,38 @@ useEffect(() => {
 }, []);
 ```
 
-###  Async Operations em Componentes Desmontados
+### Async Operations em Componentes Desmontados
+
 ```typescript
 useEffect(() => {
   let isMounted = true;
-  
+
   const fetchData = async () => {
     const data = await api.getData();
-    
+
     //  SEMPRE verificar se ainda montado
     if (isMounted) {
       setData(data);
     }
   };
-  
+
   fetchData();
-  
+
   return () => {
     isMounted = false;
   };
 }, []);
 ```
 
-###  Large Objects em State
+### Large Objects em State
+
 ```typescript
 //  Evitar
 const [largeObject, setLargeObject] = useState(hugeDataSet);
 
 //  Preferir
 const [essentialData, setEssentialData] = useState(
-  extractEssentialData(hugeDataSet)
+  extractEssentialData(hugeDataSet),
 );
 ```
 
@@ -490,41 +523,45 @@ const [essentialData, setEssentialData] = useState(
 ### Baseline Final (Sprint 3)
 
 **Mesmo cenário de teste:**
+
 ```
 Memória Inicial: 98 MB
 Memória após Login: 118 MB (-6 MB)
 Memória após 20 reviews: 146 MB (-36 MB)
-Memória após Logout: 102 MB (-54 MB) 
+Memória após Logout: 102 MB (-54 MB)
 
 Delta após ciclo completo: +4 MB  (aceitável)
 ```
 
 ### Comparação Antes vs Depois
 
-| Métrica | Antes | Depois | Melhoria |
-|---------|-------|--------|----------|
-| **Memória Inicial** | 98 MB | 98 MB | - |
-| **Memória Pico** | 182 MB | 146 MB | ⬇ 20% |
-| **Memória após Logout** | 156 MB | 102 MB | ⬇ 35% |
-| **Leaks detectados** | 3 | 0 | ok |
-| **Cache size** | Ilimitado | Max 3 | ok |
+| Métrica                 | Antes     | Depois | Melhoria |
+| ----------------------- | --------- | ------ | -------- |
+| **Memória Inicial**     | 98 MB     | 98 MB  | -        |
+| **Memória Pico**        | 182 MB    | 146 MB | ⬇ 20%    |
+| **Memória após Logout** | 156 MB    | 102 MB | ⬇ 35%    |
+| **Leaks detectados**    | 3         | 0      | ok       |
+| **Cache size**          | Ilimitado | Max 3  | ok       |
 
 ---
 
 ## Lições Aprendidas
 
 ### O que funcionou
+
 1. **Heap Snapshots** são essenciais para identificar leaks sutis
 2. **Cleanup functions** em useEffect previnem 90% dos leaks
 3. **Map e Set** são mais eficientes que Object e Array para coleções grandes
 4. **Cache com limite** evita crescimento descontrolado
 
 ### Desafios
+
 1. **GC não é instantâneo** - precisa aguardar para ver efeito real
 2. **Profiling em produção é diferente** - desenvolvimento tem overhead
 3. **React Native tem peculiaridades** - alguns leaks são do framework
 
 ### Próximos Passos
+
 - [ ] Implementar monitoring de memória em produção
 - [ ] Adicionar alertas para memória > 200MB
 - [ ] Documentar padrões de cleanup em guia de contribuição
@@ -536,9 +573,9 @@ Delta após ciclo completo: +4 MB  (aceitável)
 
 Embora React Native use GC automático, memory leaks ainda são possíveis e impactam significativamente a UX, especialmente em sessões longas. As otimizações implementadas resultaram em:
 
--  **35% menos memória** após logout
--  **20% redução no pico** de memória
--  **0 leaks conhecidos** no código atual
--  **Cache otimizado** com LRU
+- **35% menos memória** após logout
+- **20% redução no pico** de memória
+- **0 leaks conhecidos** no código atual
+- **Cache otimizado** com LRU
 
 O app agora gerencia memória de forma eficiente e escalável, permitindo sessões longas sem degradação de performance.

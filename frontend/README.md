@@ -121,6 +121,7 @@ open coverage/lcov-report/index.html
 ```
 
 **Métricas atuais:**
+
 - Cobertura de linhas: **78%**
 - Cobertura de branches: **65%**
 - Arquivos críticos com 85%+: serviços de API, autenticação, i18n
@@ -129,34 +130,38 @@ Veja `docs/coverage-report.md` para análise detalhada.
 
 ## Scripts Disponíveis
 
-| Script | Descrição |
-|--------|-----------|
-| `npm start` | Inicia o servidor Expo |
-| `npm test` | Executa suite de testes |
-| `npm run test:watch` | Testes em modo watch |
+| Script                  | Descrição                   |
+| ----------------------- | --------------------------- |
+| `npm start`             | Inicia o servidor Expo      |
+| `npm test`              | Executa suite de testes     |
+| `npm run test:watch`    | Testes em modo watch        |
 | `npm run test:coverage` | Gera relatório de cobertura |
-| `npm run lint` | Verifica código com ESLint |
-| `npm run ios` | Roda no simulador iOS |
-| `npm run android` | Roda no emulador Android |
+| `npm run lint`          | Verifica código com ESLint  |
+| `npm run ios`           | Roda no simulador iOS       |
+| `npm run android`       | Roda no emulador Android    |
 
 ## Funcionalidades Principais
 
 ### Autenticação
+
 - Login via Google OAuth
 - Gerenciamento de sessão com JWT
 - Persistência de token em AsyncStorage
 
 ### Aprendizado
+
 - Sistema de repetição espaçada
 - Múltiplos tipos de questões (múltipla escolha, texto livre, imagens)
 - Progressão e estatísticas do usuário
 
 ### Internacionalização
+
 - Suporte para Inglês e Português
 - Persistência de preferência de idioma
 - Interface completamente traduzida
 
 ### Animações
+
 - Flip cards com React Native Reanimated
 - Transições suaves entre telas
 - Feedback visual nas respostas
@@ -164,6 +169,7 @@ Veja `docs/coverage-report.md` para análise detalhada.
 ## Debugging
 
 O projeto inclui logs detalhados de bugs encontrados e corrigidos. Consulte `docs/debugging-log.md` para:
+
 - Bug #1: Race condition no carregamento do idioma
 - Bug #2: Vazamento de memória no login
 - Bug #3: Estilização incorreta no modo escuro
@@ -171,6 +177,7 @@ O projeto inclui logs detalhados de bugs encontrados e corrigidos. Consulte `doc
 ## Otimizações de Performance
 
 Implementações para melhorar performance:
+
 - Uso de `React.memo` em componentes de lista
 - Lazy loading de traduções
 - Debouncing em inputs de busca
