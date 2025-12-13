@@ -1,4 +1,4 @@
-# Log de Refatoração do Projeto Dudulingo
+# Log de Refatoração do Projeto Repecards
 
 Este documento registra as refatorações aplicadas para corrigir os code smells identificados.
 
