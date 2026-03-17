@@ -80,52 +80,7 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true);
   const colorScheme = useColorScheme();
   const router = useRouter();
-
-  // This is the centralized logic to decide where an authenticated user should go.
-  const handleUserSession = async () => {
-    try {
-      const user = await api.getMe();
-      if (user && user.selectedLanguage) {
-        // If language is selected, they are ready for the main app.
-        // The learn screen will handle prompting them to select a deck if needed.
-        router.replace("/(tabs)/learn");
-      } else {
-        // If no language is selected, they must go through the setup flow.
-        router.replace("/auth/select-language");
-      }
-    } catch (error) {
-      console.error("Failed to fetch user data, logging out:", error);
-      // If fetching the user fails (e.g., bad token), log them out.
-      await setToken(null);
-      router.replace('/auth/sign-in');
-    }
-  };
-
-  useEffect(() => {
-    async function setup() {
-      SplashScreen.preventAutoHideAsync();
-      try {
-        const token = await getToken();
-        if (token) {
-          setIsAuthenticated(true);
-          // On app startup, handle the user session immediately.
-          await handleUserSession();
-        } else {
-          setIsAuthenticated(false);
-          // If no token, the protected route hook will redirect to sign-in.
-        }
-        const locale = await getLocale();
-        i18n.locale = locale;
-      } catch (e) {
-        console.error("Error setting up root layout:", e);
-        await setToken(null); // Logout on any critical error
-      } finally {
-        setLoading(false);
-        await SplashScreen.hideAsync();
-      }
-    }
-    setup();
-  }, []);
+  const setupRan = React.useRef(false);
 
   const setToken = async (token: string | null) => {
     if (token) {
@@ -136,6 +91,49 @@ export default function RootLayout() {
       setIsAuthenticated(false);
     }
   };
+
+  // This is the centralized logic to decide where an authenticated user should go.
+  const handleUserSession = async () => {
+    try {
+      const user = await api.getMe();
+      if (user && user.selectedLanguage) {
+        router.replace("/(tabs)/learn");
+      } else {
+        router.replace("/auth/select-language");
+      }
+    } catch (error) {
+      console.error("Failed to fetch user data, logging out:", error);
+      await logout();
+      setIsAuthenticated(false);
+    }
+  };
+
+  useEffect(() => {
+    if (setupRan.current) return;
+    setupRan.current = true;
+
+    async function setup() {
+      SplashScreen.preventAutoHideAsync();
+      try {
+        const locale = await getLocale();
+        i18n.locale = locale;
+
+        const token = await getToken();
+        if (token) {
+          setIsAuthenticated(true);
+          await handleUserSession();
+        }
+      } catch (e) {
+        console.error("Error setting up root layout:", e);
+        await logout();
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+        await SplashScreen.hideAsync();
+      }
+    }
+    setup();
+  }, []);
 
   if (loading) {
     return null; 
