@@ -22,7 +22,8 @@ export default function SelectDeck() {
 
   const loadDecks = async () => {
     try {
-      const allDecks = await api.getAllDecks()
+      const selectedLanguage = await AsyncStorage.getItem('selectedLanguage')
+      const allDecks = await api.getAllDecks(selectedLanguage || undefined)
       setDecks(allDecks)
     } catch (error) {
       console.error('Failed to load decks:', error)

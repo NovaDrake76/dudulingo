@@ -21,21 +21,16 @@ const seedDatabase = async () => {
     console.log('Inserting cards...')
     const createdCards = await Card.insertMany(allCards)
 
-    // separate cards by deck
-    const animalCards = createdCards.filter((card) => card.imageUrl) // distinguish them
-    const commonWordCards = createdCards.filter((card) => !card.imageUrl)
-
     console.log('Inserting decks...')
     const decksToCreate = decks.map((deck) => {
-      let cardsForDeck = []
-      if (deck.name === 'Animais') {
-        cardsForDeck = animalCards.map((c) => c._id)
-      } else if (deck.name === '40 Palavras Mais Comuns') {
-        cardsForDeck = commonWordCards.map((c) => c._id)
-      }
+      const isAnimalDeck = ['Animais', 'Animali', 'Tiere'].includes(deck.name)
+      const cardsForDeck = createdCards
+        .filter((card) => card.lang === deck.lang && (isAnimalDeck ? !!card.imageUrl : !card.imageUrl))
+        .map((c) => c._id)
+
       return {
         ...deck,
-        ownerId: createdUsers[0]._id, // assign to the first user for simplicity
+        ownerId: createdUsers[0]._id,
         cards: cardsForDeck,
       }
     })

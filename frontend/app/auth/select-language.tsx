@@ -26,6 +26,18 @@ export default function SelectLanguage() {
         onPress={() => handleSelectLanguage('en')}
       />
       <View style={{ height: 20 }} />
+      <LanguageSelector
+        languageName="Italiano"
+        flagSource={require('../../assets/images/it-flag.png')}
+        onPress={() => handleSelectLanguage('it')}
+      />
+      <View style={{ height: 20 }} />
+      <LanguageSelector
+        languageName="Deutsch"
+        flagSource={require('../../assets/images/de-flag.png')}
+        onPress={() => handleSelectLanguage('de')}
+      />
+      <View style={{ height: 20 }} />
     </View>
   );
 }

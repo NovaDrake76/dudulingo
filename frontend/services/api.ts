@@ -64,8 +64,9 @@ export const api = {
   },
 
   // decks endpoints
-  async getAllDecks() {
-    return authenticatedFetch("/decks");
+  async getAllDecks(lang?: string) {
+    const query = lang ? `?lang=${lang}` : "";
+    return authenticatedFetch(`/decks${query}`);
   },
 
   async getDeck(deckId: string) {

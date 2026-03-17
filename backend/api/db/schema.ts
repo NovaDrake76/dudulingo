@@ -24,6 +24,7 @@ export interface IDeck extends Document {
   _id: string
   name: string
   description?: string
+  lang?: string
   ownerId: string
   cards: string[]
 }
@@ -69,6 +70,7 @@ const DeckSchema = new Schema<IDeck>(
     _id: { type: String, default: uuidv4 },
     name: { type: String, required: true },
     description: String,
+    lang: String,
     ownerId: { type: String, ref: 'User', required: true },
     cards: [{ type: String, ref: 'Card' }],
   },

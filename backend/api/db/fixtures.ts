@@ -12,18 +12,76 @@ export const users = [
 ]
 
 export const decks = [
+  // English
   {
     name: 'Animais',
     description: 'Uma coleção de animais comuns em inglês.',
+    lang: 'en',
   },
   {
     name: '40 Palavras Mais Comuns',
     description: 'As 40 palavras mais utilizadas na língua inglesa.',
+    lang: 'en',
+  },
+  // Italian
+  {
+    name: 'Animali',
+    description: 'Uma coleção de animais comuns em italiano.',
+    lang: 'it',
+  },
+  {
+    name: '40 Parole Più Comuni',
+    description: 'As 40 palavras mais utilizadas na língua italiana.',
+    lang: 'it',
+  },
+  // German
+  {
+    name: 'Tiere',
+    description: 'Uma coleção de animais comuns em alemão.',
+    lang: 'de',
+  },
+  {
+    name: '40 Häufigste Wörter',
+    description: 'As 40 palavras mais utilizadas na língua alemã.',
+    lang: 'de',
   },
 ]
 
-// Lista de palavras mais comuns
-const commonWords = [
+// ─── Animal image URLs (shared across languages) ───
+
+const animalImages = {
+  dog: 'https://hips.hearstapps.com/hmg-prod/images/dog-puppy-on-garden-royalty-free-image-1586966191.jpg?crop=0.752xw:1.00xh;0.175xw,0&resize=1200:*',
+  cat: 'https://t3.ftcdn.net/jpg/02/36/99/22/360_F_236992283_sNOxCVQeFLd5pdqaKGh8DRGMZy7P4XKm.jpg',
+  lion: 'https://www.bornfree.org.uk/wp-content/uploads/2023/09/Web-image-iStock-492611032.jpg',
+  tiger: 'https://files.worldwildlife.org/wwfcmsprod/images/Tiger_resting_Bandhavgarh_National_Park_India/hero_small/6aofsvaglm_Medium_WW226365.jpg',
+  elephant: 'https://a-z-animals.com/media/2022/09/shutterstock_2118427715-1024x711.jpg',
+  monkey: 'https://upload.wikimedia.org/wikipedia/commons/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg',
+  giraffe: 'https://giraffeconservation.org/wp-content/uploads/2024/11/featured-16-9_southern-3-topaz.jpg',
+  zebra: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Zebra_standing_alone_crop.jpg',
+  bear: 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Ours_brun_parcanimalierpyrenees_1.jpg',
+  bird: 'https://www.nwf.org/-/media/NEW-WEBSITE/Shared-Folder/Magazines/2024/Spring/GALBATROSS-Eastern-bluebirds-SPRING24-960x630.jpg',
+  fish: 'https://images.pexels.com/photos/128756/pexels-photo-128756.jpeg?cs=srgb&dl=pexels-crisdip-35358-128756.jpg&fm=jpg',
+  horse: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Nokota_Horses_cropped.jpg',
+}
+
+// ─── English ───
+
+const enAnimalCards = [
+  { prompt: 'Cachorro', answer: 'Dog', imageUrl: animalImages.dog },
+  { prompt: 'Gato', answer: 'Cat', imageUrl: animalImages.cat },
+  { prompt: 'Leão', answer: 'Lion', imageUrl: animalImages.lion },
+  { prompt: 'Tigre', answer: 'Tiger', imageUrl: animalImages.tiger },
+  { prompt: 'Elefante', answer: 'Elephant', imageUrl: animalImages.elephant },
+  { prompt: 'Macaco', answer: 'Monkey', imageUrl: animalImages.monkey },
+  { prompt: 'Girafa', answer: 'Giraffe', imageUrl: animalImages.giraffe },
+  { prompt: 'Zebra', answer: 'Zebra', imageUrl: animalImages.zebra },
+  { prompt: 'Urso', answer: 'Bear', imageUrl: animalImages.bear },
+  { prompt: 'Pássaro', answer: 'Bird', imageUrl: animalImages.bird },
+  { prompt: 'Peixe', answer: 'Fish', imageUrl: animalImages.fish },
+  { prompt: 'Cavalo', answer: 'Horse', imageUrl: animalImages.horse },
+].map((c) => ({ type: 'basic' as const, level: 1, lang: 'en', ...c }))
+
+const enCommonWords = [
   { answer: 'the', prompt: 'o, a, os, as' },
   { answer: 'be', prompt: 'ser, estar' },
   { answer: 'to', prompt: 'para, a' },
@@ -64,123 +122,135 @@ const commonWords = [
   { answer: 'there', prompt: 'lá, ali' },
   { answer: 'their', prompt: 'deles, delas' },
   { answer: 'what', prompt: 'o que, qual' },
+].map((w) => ({ type: 'basic' as const, level: 1, lang: 'en', ...w }))
+
+// ─── Italian ───
+
+const itAnimalCards = [
+  { prompt: 'Cachorro', answer: 'Cane', imageUrl: animalImages.dog },
+  { prompt: 'Gato', answer: 'Gatto', imageUrl: animalImages.cat },
+  { prompt: 'Leão', answer: 'Leone', imageUrl: animalImages.lion },
+  { prompt: 'Tigre', answer: 'Tigre', imageUrl: animalImages.tiger },
+  { prompt: 'Elefante', answer: 'Elefante', imageUrl: animalImages.elephant },
+  { prompt: 'Macaco', answer: 'Scimmia', imageUrl: animalImages.monkey },
+  { prompt: 'Girafa', answer: 'Giraffa', imageUrl: animalImages.giraffe },
+  { prompt: 'Zebra', answer: 'Zebra', imageUrl: animalImages.zebra },
+  { prompt: 'Urso', answer: 'Orso', imageUrl: animalImages.bear },
+  { prompt: 'Pássaro', answer: 'Uccello', imageUrl: animalImages.bird },
+  { prompt: 'Peixe', answer: 'Pesce', imageUrl: animalImages.fish },
+  { prompt: 'Cavalo', answer: 'Cavallo', imageUrl: animalImages.horse },
+].map((c) => ({ type: 'basic' as const, level: 1, lang: 'it', ...c }))
+
+const itCommonWords = [
+  { answer: 'il, la, lo', prompt: 'o, a, os, as' },
+  { answer: 'essere', prompt: 'ser, estar' },
+  { answer: 'a, per', prompt: 'para, a' },
+  { answer: 'di', prompt: 'de' },
+  { answer: 'e', prompt: 'e' },
+  { answer: 'un, una', prompt: 'um, uma' },
+  { answer: 'in', prompt: 'em, no, na' },
+  { answer: 'che', prompt: 'aquele, essa, isso, que' },
+  { answer: 'avere', prompt: 'ter' },
+  { answer: 'io', prompt: 'eu' },
+  { answer: 'esso, essa', prompt: 'isto, isso' },
+  { answer: 'per', prompt: 'para, por' },
+  { answer: 'non', prompt: 'não' },
+  { answer: 'su', prompt: 'em, sobre' },
+  { answer: 'con', prompt: 'com' },
+  { answer: 'lui', prompt: 'ele' },
+  { answer: 'come', prompt: 'como, enquanto' },
+  { answer: 'tu', prompt: 'você' },
+  { answer: 'fare', prompt: 'fazer' },
+  { answer: 'a', prompt: 'em, a, às' },
+  { answer: 'questo', prompt: 'este, esta, isto' },
+  { answer: 'ma', prompt: 'mas, porém' },
+  { answer: 'suo', prompt: 'dele' },
+  { answer: 'da', prompt: 'por, perto de' },
+  { answer: 'da', prompt: 'de, desde' },
+  { answer: 'loro', prompt: 'eles, elas' },
+  { answer: 'noi', prompt: 'nós' },
+  { answer: 'dire', prompt: 'dizer' },
+  { answer: 'lei', prompt: 'dela' },
+  { answer: 'lei', prompt: 'ela' },
+  { answer: 'o', prompt: 'ou' },
+  { answer: 'un, una', prompt: 'um, uma (artigo)' },
+  { answer: '(futuro)', prompt: '(futuro)' },
+  { answer: 'mio, mia', prompt: 'meu, minha' },
+  { answer: 'uno, una', prompt: 'um, uma (número)' },
+  { answer: 'tutto, tutta', prompt: 'todo, toda, todos, todas' },
+  { answer: '(condizionale)', prompt: '(condicional)' },
+  { answer: 'là, lì', prompt: 'lá, ali' },
+  { answer: 'loro', prompt: 'deles, delas' },
+  { answer: 'che cosa, quale', prompt: 'o que, qual' },
+].map((w) => ({ type: 'basic' as const, level: 1, lang: 'it', ...w }))
+
+// ─── German ───
+
+const deAnimalCards = [
+  { prompt: 'Cachorro', answer: 'Hund', imageUrl: animalImages.dog },
+  { prompt: 'Gato', answer: 'Katze', imageUrl: animalImages.cat },
+  { prompt: 'Leão', answer: 'Löwe', imageUrl: animalImages.lion },
+  { prompt: 'Tigre', answer: 'Tiger', imageUrl: animalImages.tiger },
+  { prompt: 'Elefante', answer: 'Elefant', imageUrl: animalImages.elephant },
+  { prompt: 'Macaco', answer: 'Affe', imageUrl: animalImages.monkey },
+  { prompt: 'Girafa', answer: 'Giraffe', imageUrl: animalImages.giraffe },
+  { prompt: 'Zebra', answer: 'Zebra', imageUrl: animalImages.zebra },
+  { prompt: 'Urso', answer: 'Bär', imageUrl: animalImages.bear },
+  { prompt: 'Pássaro', answer: 'Vogel', imageUrl: animalImages.bird },
+  { prompt: 'Peixe', answer: 'Fisch', imageUrl: animalImages.fish },
+  { prompt: 'Cavalo', answer: 'Pferd', imageUrl: animalImages.horse },
+].map((c) => ({ type: 'basic' as const, level: 1, lang: 'de', ...c }))
+
+const deCommonWords = [
+  { answer: 'der, die, das', prompt: 'o, a, os, as' },
+  { answer: 'sein', prompt: 'ser, estar' },
+  { answer: 'zu', prompt: 'para, a' },
+  { answer: 'von', prompt: 'de' },
+  { answer: 'und', prompt: 'e' },
+  { answer: 'ein, eine', prompt: 'um, uma' },
+  { answer: 'in', prompt: 'em, no, na' },
+  { answer: 'dass', prompt: 'aquele, essa, isso, que' },
+  { answer: 'haben', prompt: 'ter' },
+  { answer: 'ich', prompt: 'eu' },
+  { answer: 'es', prompt: 'isto, isso' },
+  { answer: 'für', prompt: 'para, por' },
+  { answer: 'nicht', prompt: 'não' },
+  { answer: 'auf', prompt: 'em, sobre' },
+  { answer: 'mit', prompt: 'com' },
+  { answer: 'er', prompt: 'ele' },
+  { answer: 'als, wie', prompt: 'como, enquanto' },
+  { answer: 'du', prompt: 'você' },
+  { answer: 'machen, tun', prompt: 'fazer' },
+  { answer: 'an, bei', prompt: 'em, a, às' },
+  { answer: 'dies, dieser', prompt: 'este, esta, isto' },
+  { answer: 'aber', prompt: 'mas, porém' },
+  { answer: 'sein (possessivo)', prompt: 'dele' },
+  { answer: 'bei, von', prompt: 'por, perto de' },
+  { answer: 'von, aus', prompt: 'de, desde' },
+  { answer: 'sie (plural)', prompt: 'eles, elas' },
+  { answer: 'wir', prompt: 'nós' },
+  { answer: 'sagen', prompt: 'dizer' },
+  { answer: 'ihr (possessivo)', prompt: 'dela' },
+  { answer: 'sie', prompt: 'ela' },
+  { answer: 'oder', prompt: 'ou' },
+  { answer: 'ein, eine', prompt: 'um, uma (artigo)' },
+  { answer: 'werden', prompt: '(futuro)' },
+  { answer: 'mein, meine', prompt: 'meu, minha' },
+  { answer: 'eins, eine', prompt: 'um, uma (número)' },
+  { answer: 'alle, alles', prompt: 'todo, toda, todos, todas' },
+  { answer: 'würde', prompt: '(condicional)' },
+  { answer: 'dort, da', prompt: 'lá, ali' },
+  { answer: 'ihr, ihre', prompt: 'deles, delas' },
+  { answer: 'was, welcher', prompt: 'o que, qual' },
+].map((w) => ({ type: 'basic' as const, level: 1, lang: 'de', ...w }))
+
+// ─── Export all cards ───
+
+export const cards = [
+  ...enAnimalCards,
+  ...enCommonWords,
+  ...itAnimalCards,
+  ...itCommonWords,
+  ...deAnimalCards,
+  ...deCommonWords,
 ]
-
-const animalCards = [
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Cachorro',
-    answer: 'Dog',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://hips.hearstapps.com/hmg-prod/images/dog-puppy-on-garden-royalty-free-image-1586966191.jpg?crop=0.752xw:1.00xh;0.175xw,0&resize=1200:*',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Gato',
-    answer: 'Cat',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://t3.ftcdn.net/jpg/02/36/99/22/360_F_236992283_sNOxCVQeFLd5pdqaKGh8DRGMZy7P4XKm.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Leão',
-    answer: 'Lion',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://www.bornfree.org.uk/wp-content/uploads/2023/09/Web-image-iStock-492611032.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Tigre',
-    answer: 'Tiger',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://files.worldwildlife.org/wwfcmsprod/images/Tiger_resting_Bandhavgarh_National_Park_India/hero_small/6aofsvaglm_Medium_WW226365.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Elefante',
-    answer: 'Elephant',
-    lang: 'pt-BR',
-    imageUrl: 'https://a-z-animals.com/media/2022/09/shutterstock_2118427715-1024x711.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Macaco',
-    answer: 'Monkey',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/4/43/Bonnet_macaque_%28Macaca_radiata%29_Photograph_By_Shantanu_Kuveskar.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Girafa',
-    answer: 'Giraffe',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://giraffeconservation.org/wp-content/uploads/2024/11/featured-16-9_southern-3-topaz.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Zebra',
-    answer: 'Zebra',
-    lang: 'pt-BR',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/f/f0/Zebra_standing_alone_crop.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Urso',
-    answer: 'Bear',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://upload.wikimedia.org/wikipedia/commons/9/9e/Ours_brun_parcanimalierpyrenees_1.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Pássaro',
-    answer: 'Bird',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://www.nwf.org/-/media/NEW-WEBSITE/Shared-Folder/Magazines/2024/Spring/GALBATROSS-Eastern-bluebirds-SPRING24-960x630.jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Peixe',
-    answer: 'Fish',
-    lang: 'pt-BR',
-    imageUrl:
-      'https://images.pexels.com/photos/128756/pexels-photo-128756.jpeg?cs=srgb&dl=pexels-crisdip-35358-128756.jpg&fm=jpg',
-  },
-  {
-    type: 'basic',
-    level: 1,
-    prompt: 'Cavalo',
-    answer: 'Horse',
-    lang: 'pt-BR',
-    imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/d/de/Nokota_Horses_cropped.jpg',
-  },
-]
-
-// Mapeia as palavras comuns para o formato de card
-const commonWordCards = commonWords.map((word) => ({
-  type: 'basic' as const,
-  level: 1,
-  prompt: word.prompt,
-  answer: word.answer,
-  lang: 'pt-BR',
-}))
-
-export const cards = [...animalCards, ...commonWordCards]

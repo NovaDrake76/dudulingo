@@ -26,9 +26,13 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.get('/', async (_req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const allDecks = await Deck.find().populate('ownerId')
+    const filter: Record<string, string> = {}
+    if (req.query.lang && typeof req.query.lang === 'string') {
+      filter.lang = req.query.lang
+    }
+    const allDecks = await Deck.find(filter).populate('ownerId')
 
     const decksWithCount = allDecks.map((deck) => {
       const deckObject = deck.toObject()
