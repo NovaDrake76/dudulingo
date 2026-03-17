@@ -57,7 +57,7 @@ function RootLayoutNav() {
   useProtectedRoute(isAuthenticated);
 
   return (
-    <Stack>
+    <Stack screenOptions={{ headerTransparent: false, headerBlurEffect: undefined }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="auth/select-language"
