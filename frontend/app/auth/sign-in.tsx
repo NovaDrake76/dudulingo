@@ -1,7 +1,8 @@
 import { router } from 'expo-router';
+import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect } from 'react';
-import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -43,31 +44,51 @@ export default function SignIn() {
       const googleAuthUrl = `${apiUrl}/auth/google?state=${encodeURIComponent(stateBase64)}`;
       window.location.href = googleAuthUrl;
     } else {
-      // Mobile: Use expo-web-browser for OAuth
-      const redirectUri = 'dudulingo://auth/callback';
+      // Mobile: Use in-app browser with proper deep linking
+      const redirectUri = makeRedirectUri({
+        scheme: 'dudulingo',
+        path: 'auth/callback',
+      });
+
       const stateData = JSON.stringify({ redirectUri });
       const stateBase64 = btoa(stateData);
       const googleAuthUrl = `${apiUrl}/auth/google?state=${encodeURIComponent(stateBase64)}`;
 
       try {
+        // Open in-app browser (stays in app, better UX)
         const result = await WebBrowser.openAuthSessionAsync(
           googleAuthUrl,
-          redirectUri
+          redirectUri,
+          {
+            // Stay in-app on iOS
+            preferEphemeralSession: true,
+          }
         );
 
         if (result.type === 'success' && result.url) {
-          // Extract token from redirect URL
-          const url = new URL(result.url);
-          const token = url.searchParams.get('token');
-
-          if (token) {
-            // Navigate to callback handler
-            router.replace(`/auth/callback?token=${token}`);
-          }
+          // Handle the redirect URL
+          handleCallback(result.url);
+        } else if (result.type === 'cancel') {
+          console.log('User cancelled login');
         }
       } catch (error) {
         console.error('OAuth error:', error);
       }
+    }
+  };
+
+  const handleCallback = (url: string) => {
+    try {
+      const parsed = Linking.parse(url);
+      const token = parsed.queryParams?.token as string;
+
+      if (token) {
+        router.replace(`/auth/callback?token=${token}`);
+      } else {
+        console.error('No token in callback URL');
+      }
+    } catch (error) {
+      console.error('Failed to parse callback URL:', error);
     }
   };
 
