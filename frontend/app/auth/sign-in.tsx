@@ -35,7 +35,8 @@ export default function SignIn() {
       : 'http://localhost:8081/auth/callback';
     const stateData = JSON.stringify({ redirectUri });
     const stateBase64 = btoa(stateData);
-    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+    // Force production URL (env not loading on web dev server)
+    const apiUrl = 'https://dudulingo-api.onrender.com';
     const googleAuthUrl = apiUrl + '/auth/google?state=' + encodeURIComponent(stateBase64);
 
     // DEBUG: Log the URLs being used

@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -23,15 +22,9 @@ const TAB_CONFIG: Record<string, { icon: string; iconFocused: string; label: str
 export default function CustomTabBar({ state, descriptors, navigation }: TabBarProps) {
   return (
     <View style={styles.wrapper}>
-      {Platform.OS === 'web' ? (
-        <View style={[styles.container, styles.webFallback]}>
-          <TabButtons state={state} descriptors={descriptors} navigation={navigation} />
-        </View>
-      ) : (
-        <BlurView intensity={40} tint="dark" style={styles.container}>
-          <TabButtons state={state} descriptors={descriptors} navigation={navigation} />
-        </BlurView>
-      )}
+      <View style={[styles.container, styles.fallback]}>
+        <TabButtons state={state} descriptors={descriptors} navigation={navigation} />
+      </View>
     </View>
   );
 }
@@ -132,9 +125,8 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
-  webFallback: {
-    backgroundColor: 'rgba(14, 14, 14, 0.92)',
-    backdropFilter: 'blur(20px)',
+  fallback: {
+    backgroundColor: 'rgba(14, 14, 14, 0.95)',
   },
   tabRow: {
     flexDirection: 'row',
