@@ -24,6 +24,7 @@
     "deck:seed": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts --seed"
   },
   "dependencies": {
+    "@google-cloud/text-to-speech": "^6.4.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",

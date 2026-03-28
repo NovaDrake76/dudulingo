@@ -4,3 +4,7 @@ logs/
 .env
 .env.local
 dist/
+
+# Google Cloud credentials
+google-cloud-key.json
+*-service-account-key.json

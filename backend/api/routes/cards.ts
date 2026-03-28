@@ -11,6 +11,7 @@ import {
   createCardSchema,
   updateCardSchema,
 } from '../schemas/card.schema.ts'
+import { generateSpeechUrl } from '../services/tts.ts'
 
 const router = Router()
 
@@ -39,11 +40,15 @@ router.post('/', validate(createCardSchema), async (req, res) => {
       }
     }
 
+    // Generate TTS audio URL for the answer (the word to be learned)
+    const audioUrl = await generateSpeechUrl(answer, lang)
+
     const newCard = new Card({
       type,
       prompt,
       answer,
       imageUrl,
+      audioUrl,
       lang,
       level,
     })
@@ -54,6 +59,7 @@ router.post('/', validate(createCardSchema), async (req, res) => {
       await Deck.findByIdAndUpdate(deckId, { $addToSet: { cards: newCard._id } })
     }
 
+    logger.info('Card created with TTS', { cardId: newCard._id, hasAudio: !!audioUrl })
     res.status(201).json(newCard)
   } catch (err) {
     logger.error('Failed to create card', { error: err })
