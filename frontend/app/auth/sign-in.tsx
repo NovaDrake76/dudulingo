@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   FadeInDown,
@@ -12,6 +13,8 @@ import Animated, {
 import GoogleIcon from '../../components/icons/GoogleIcon';
 import { AppColors } from '../../constants/theme';
 import i18n, { setLocale } from '../../services/i18n';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function SignIn() {
   const floatY = useSharedValue(0);
@@ -29,26 +32,42 @@ export default function SignIn() {
     transform: [{ translateY: floatY.value }],
   }));
 
-  const handleLogin = () => {
-    const redirectUri = window?.location
-      ? window.location.origin + '/auth/callback'
-      : 'http://localhost:8081/auth/callback';
-    const stateData = JSON.stringify({ redirectUri });
-    const stateBase64 = btoa(stateData);
-    // Force production URL (env not loading on web dev server)
-    const apiUrl = 'https://dudulingo-api.onrender.com';
-    const googleAuthUrl = apiUrl + '/auth/google?state=' + encodeURIComponent(stateBase64);
+  const handleLogin = async () => {
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'https://dudulingo-api.onrender.com';
 
-    // DEBUG: Log the URLs being used
-    console.log('🔍 DEBUG OAuth URLs:');
-    console.log('API URL:', apiUrl);
-    console.log('Google Auth URL:', googleAuthUrl);
-    console.log('Redirect URI:', redirectUri);
-
-    if (typeof window !== 'undefined') {
+    if (Platform.OS === 'web') {
+      // Web: Use standard OAuth redirect
+      const redirectUri = window.location.origin + '/auth/callback';
+      const stateData = JSON.stringify({ redirectUri });
+      const stateBase64 = btoa(stateData);
+      const googleAuthUrl = `${apiUrl}/auth/google?state=${encodeURIComponent(stateBase64)}`;
       window.location.href = googleAuthUrl;
     } else {
-      router.push(googleAuthUrl as any);
+      // Mobile: Use expo-web-browser for OAuth
+      const redirectUri = 'dudulingo://auth/callback';
+      const stateData = JSON.stringify({ redirectUri });
+      const stateBase64 = btoa(stateData);
+      const googleAuthUrl = `${apiUrl}/auth/google?state=${encodeURIComponent(stateBase64)}`;
+
+      try {
+        const result = await WebBrowser.openAuthSessionAsync(
+          googleAuthUrl,
+          redirectUri
+        );
+
+        if (result.type === 'success' && result.url) {
+          // Extract token from redirect URL
+          const url = new URL(result.url);
+          const token = url.searchParams.get('token');
+
+          if (token) {
+            // Navigate to callback handler
+            router.replace(`/auth/callback?token=${token}`);
+          }
+        }
+      } catch (error) {
+        console.error('OAuth error:', error);
+      }
     }
   };
 
