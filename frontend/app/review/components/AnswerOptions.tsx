@@ -1,5 +1,5 @@
-
-import { Image, Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
+import { CardImage } from './CardImage';
 import { styles } from './styles';
 
 type Option = string | { text: string; imageUrl: string };
@@ -27,7 +27,7 @@ export function AnswerOptions({ options, showResult, getOptionStyle, handleSelec
             onPress={() => handleSelectOption(optionText)}
             disabled={showResult}
           >
-            {optionImage && <Image source={{ uri: optionImage }} style={styles.optionImage} />}
+            {optionImage && <CardImage uri={optionImage} style={styles.optionImage} />}
             {displayLabel ? <Text style={styles.optionText}>{displayLabel}</Text> : null}
           </Pressable>
         );

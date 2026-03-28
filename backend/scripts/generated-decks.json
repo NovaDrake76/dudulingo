@@ -1,0 +1,230 @@
+[
+  {
+    "deck": {
+      "name": "Comida",
+      "description": "Palavras comuns sobre alimentos e bebidas em inglês."
+    },
+    "cards": [
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Maçã",
+        "answer": "Apple",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Red_Apple.jpg/500px-Red_Apple.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=apple"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Pão",
+        "answer": "Bread",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Breaking_bread%2C_juice%2C_dinner_party%2C_Broadview_townhouse%2C_Seattle%2C_Washington%2C_USA.jpg/500px-Breaking_bread%2C_juice%2C_dinner_party%2C_Broadview_townhouse%2C_Seattle%2C_Washington%2C_USA.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=bread"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Queijo",
+        "answer": "Cheese",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Cheese_limburger_edit.jpg/500px-Cheese_limburger_edit.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=cheese"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Arroz",
+        "answer": "Rice",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Parboiled_rice_with_chicken%2C_peppers%2C_cucurbita%2C_peas_and_tomato.jpg/500px-Parboiled_rice_with_chicken%2C_peppers%2C_cucurbita%2C_peas_and_tomato.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 4.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=rice"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Frango",
+        "answer": "Chicken",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Fried-Chicken-Set.jpg/500px-Fried-Chicken-Set.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=chicken"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Ovo",
+        "answer": "Egg",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/07/McD-Egg-McMuffin.jpg/500px-McD-Egg-McMuffin.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=egg"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Leite",
+        "answer": "Milk",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Milk_drop_%28speed_photo%29.jpg/500px-Milk_drop_%28speed_photo%29.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=milk"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Água",
+        "answer": "Water",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Water_drop_001.jpg/500px-Water_drop_001.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=water"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Carne",
+        "answer": "Meat",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Rodent_meat_dish.jpg/500px-Rodent_meat_dish.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=meat"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Peixe",
+        "answer": "Fish",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Red_Fish_at_Papah%C4%81naumoku%C4%81kea.jpg/500px-Red_Fish_at_Papah%C4%81naumoku%C4%81kea.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=fish"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Banana",
+        "answer": "Banana",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Banana_growing_stage.jpg/500px-Banana_growing_stage.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=banana"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Tomate",
+        "answer": "Tomato",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Organic_home-grown_tomatoes_-_unripe_to_ripe.jpg/500px-Organic_home-grown_tomatoes_-_unripe_to_ripe.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 4.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=tomato"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Batata",
+        "answer": "Potato",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/02/Potato_with_sprouts.jpg/500px-Potato_with_sprouts.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=potato"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Café",
+        "answer": "Coffee",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/A_small_cup_of_coffee.JPG/500px-A_small_cup_of_coffee.JPG",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=coffee"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Suco",
+        "answer": "Juice",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Beet_juice-01.jpg/330px-Beet_juice-01.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 2.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=juice"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Manteiga",
+        "answer": "Butter",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Peanut-Butter-Jelly-Sandwich.jpg/500px-Peanut-Butter-Jelly-Sandwich.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=butter"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Sal",
+        "answer": "Salt",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Piles_of_Salt_Salar_de_Uyuni_Bolivia_Luca_Galuzzi_2006_a.jpg/500px-Piles_of_Salt_Salar_de_Uyuni_Bolivia_Luca_Galuzzi_2006_a.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 2.5",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=salt"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Açúcar",
+        "answer": "Sugar",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Brown_sugar_crystals.JPG/500px-Brown_sugar_crystals.JPG",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY 2.5",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=sugar"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Laranja",
+        "answer": "Orange",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/Ilan_Ramon%2C_NASA_photo_portrait_in_orange_suit.jpg/500px-Ilan_Ramon%2C_NASA_photo_portrait_in_orange_suit.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "Public domain",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=orange"
+      },
+      {
+        "type": "basic",
+        "level": 1,
+        "prompt": "Morango",
+        "answer": "Strawberry",
+        "lang": "pt-BR",
+        "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/D%C3%BClmen%2C_Umland_--_2014_--_7056.jpg/500px-D%C3%BClmen%2C_Umland_--_2014_--_7056.jpg",
+        "imageSource": "Wikimedia Commons",
+        "imageLicense": "CC BY-SA 4.0",
+        "audioUrl": "https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=strawberry"
+      }
+    ]
+  }
+]

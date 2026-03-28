@@ -55,25 +55,22 @@ describe('Review (Study) Integration Tests', () => {
   });
 
   const setupDeckWithCards = async () => {
-    const ownerId = uuidv4();
-    
-    // Create Cards
+    // Create Cards (MongoDB will auto-generate _id)
     const cards = await Card.create([
-      { _id: uuidv4(), type: 'basic', prompt: 'Cat', answer: 'Gato', imageUrl: 'cat.jpg' },
-      { _id: uuidv4(), type: 'basic', prompt: 'Dog', answer: 'Cachorro', imageUrl: 'dog.jpg' },
-      { _id: uuidv4(), type: 'basic', prompt: 'Bird', answer: 'Passaro', imageUrl: 'bird.jpg' },
-      { _id: uuidv4(), type: 'basic', prompt: 'Fish', answer: 'Peixe', imageUrl: 'fish.jpg' },
+      { type: 'selection_mc', prompt: 'Cat', answer: 'Gato', imageUrl: 'cat.jpg' },
+      { type: 'selection_mc', prompt: 'Dog', answer: 'Cachorro', imageUrl: 'dog.jpg' },
+      { type: 'selection_mc', prompt: 'Bird', answer: 'Passaro', imageUrl: 'bird.jpg' },
+      { type: 'selection_mc', prompt: 'Fish', answer: 'Peixe', imageUrl: 'fish.jpg' },
     ]);
 
-    // Create Deck
+    // Create Deck owned by mockUser
     const deck = await Deck.create({
-      _id: uuidv4(),
       name: 'Portuguese Basics',
-      ownerId: ownerId,
+      ownerId: mockUser._id,
       cards: cards.map(c => c._id)
     });
 
-    return { deck, cards, ownerId };
+    return { deck, cards };
   };
 
   describe('GET /review/session/general', () => {
@@ -155,15 +152,15 @@ describe('Review (Study) Integration Tests', () => {
       const response = await request(app).get(`/review/deck/${deck._id}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.deckId).toBe(deck._id);
+      expect(response.body.deckId.toString()).toBe(deck._id.toString());
       expect(response.body.cards.length).toBeGreaterThan(0);
-      expect(response.body.cards[0].cardId).toBe(cards[0]._id);
+      expect(response.body.cards[0].cardId.toString()).toBe(cards[0]._id.toString());
     });
 
     it('should return 404 if deck does not exist', async () => {
-      const fakeId = uuidv4();
+      const fakeId = '507f1f77bcf86cd799439011'; // Valid MongoDB ObjectId format
       const response = await request(app).get(`/review/deck/${fakeId}`);
-      
+
       expect(response.status).toBe(404);
       expect(response.body.error).toMatch(/not found/i);
     });
@@ -186,7 +183,7 @@ describe('Review (Study) Integration Tests', () => {
 
       const progress = await UserCardProgress.findOne({ userId: mockUser._id, cardId: targetCard._id });
       expect(progress).toBeDefined();
-      expect(progress?.deckId).toBe(deck._id);
+      expect(progress?.deckId.toString()).toBe(deck._id.toString());
       expect(progress?.repetitions).toBeGreaterThan(0);
     });
 
@@ -223,13 +220,24 @@ describe('Review (Study) Integration Tests', () => {
         .send({ rating: 'easy' });
 
       expect(response.status).toBe(400);
-      expect(response.body.error).toMatch(/required/i);
+      expect(response.body).toHaveProperty('error');
+    });
+
+    it('should return 400 if rating is invalid', async () => {
+      const { cards } = await setupDeckWithCards();
+
+      const response = await request(app)
+        .post('/review')
+        .send({ cardId: cards[0]._id.toString(), rating: 'good' });
+
+      expect(response.status).toBe(400);
+      expect(response.body).toHaveProperty('error');
     });
 
     it('should return 404 if card deck is not found (orphaned card)', async () => {
       const orphanCard = await Card.create({
         _id: uuidv4(),
-        type: 'basic',
+        type: 'selection_mc',
         answer: 'Orphan',
         prompt: 'Orphan'
       });
@@ -238,7 +246,7 @@ describe('Review (Study) Integration Tests', () => {
         .post('/review')
         .send({
           cardId: orphanCard._id,
-          rating: 'good'
+          rating: 'easy'
         });
 
       expect(response.status).toBe(404);

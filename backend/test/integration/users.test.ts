@@ -8,8 +8,10 @@ import { v4 as uuidv4 } from 'uuid'; // Ensure you have this installed
 import userRouter from '../../api/routes/users'; 
 import { User, Deck, UserCardProgress } from '../../api/db/schema';
 
-const mockUser = { 
-  id: uuidv4(), 
+const mockUserId = uuidv4();
+const mockUser = {
+  _id: mockUserId,
+  id: mockUserId,
   email: 'test@example.com',
   name: 'Test User',
   providerId: 'google-12345'

@@ -134,7 +134,7 @@ describe('ReviewScreen Integration', () => {
     fireEvent.press(getByText('next'));
 
     await waitFor(() => {
-      expect(api.submitReview).toHaveBeenCalledWith('card-2', 'easy');
+      expect(api.submitReview).toHaveBeenCalledWith('card-2', 'medium');
     });
   });
 

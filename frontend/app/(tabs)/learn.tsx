@@ -1,201 +1,322 @@
-import { router, useFocusEffect } from 'expo-router'
-import { useCallback, useState } from 'react'
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-import { api } from '../../services/api'
-import i18n from '../../services/i18n'
+import { Ionicons } from '@expo/vector-icons';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import ProgressRing from '../../components/ProgressRing';
+import { AppColors } from '../../constants/theme';
+import { api } from '../../services/api';
+import i18n from '../../services/i18n';
+import logger from '../../services/logger';
 
 type UserStats = {
-  totalWords: number
-  masteredWords: number
-  learningWords: number
-}
+  totalWords: number;
+  masteredWords: number;
+  learningWords: number;
+};
+
+const MOTIVATIONS = [
+  "Every word brings you closer to fluency! 🚀",
+  "Small steps, big progress! 💪",
+  "Your vocabulary is growing! 🌱",
+  "Keep the momentum going! 🔥",
+  "Learning is a superpower! ⚡",
+];
 
 export default function Learn() {
-  const [stats, setStats] = useState<UserStats | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const loadStats = async () => {
     try {
-      const userStats = await api.getUserStats()
-      setStats(userStats)
+      const userStats = await api.getUserStats();
+      setStats(userStats);
     } catch (error) {
-      console.error('Failed to load stats:', error)
+      logger.error('Failed to load stats', { error: String(error) });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useFocusEffect(
     useCallback(() => {
-      loadStats()
+      loadStats();
     }, [])
-  )
+  );
 
-  const handleStartReview = async () => {
-    try {
-      router.push('../review/general')
-    } catch (error) {
-      console.error('Failed to start review:', error)
-      Alert.alert('Error', 'Failed to start review')
-    }
-  }
+  const handleStartReview = () => {
+    router.push('../review/general');
+  };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color={AppColors.primary} />
       </View>
-    )
+    );
   }
 
+  const mastery = stats && stats.totalWords > 0
+    ? stats.masteredWords / stats.totalWords
+    : 0;
+  const masteryPct = Math.round(mastery * 100);
+  const newWords = stats ? stats.totalWords - stats.masteredWords : 0;
+  const motivation = MOTIVATIONS[Math.floor(Math.random() * MOTIVATIONS.length)];
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>{i18n.t('yourProgress')}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* Header */}
+      <Animated.View entering={FadeInUp.delay(100)} style={styles.header}>
+        <Text style={styles.greeting}>
+          {i18n.t('yourProgress')}
+        </Text>
+        <Text style={styles.motivation}>{motivation}</Text>
+      </Animated.View>
 
+      {/* Progress Ring */}
       {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalWords}</Text>
-            <Text style={styles.statLabel}>{i18n.t('totalWords')}</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, styles.masteredColor]}>{stats.masteredWords}</Text>
-            <Text style={styles.statLabel}>{i18n.t('mastered')}</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={[styles.statNumber, styles.learningColor]}>{stats.learningWords}</Text>
-            <Text style={styles.statLabel}>{i18n.t('learning')}</Text>
-          </View>
-        </View>
+        <Animated.View entering={FadeInDown.delay(200).springify()} style={styles.ringSection}>
+          <ProgressRing
+            progress={mastery}
+            label={masteryPct + '%'}
+            sublabel="mastered"
+          />
+        </Animated.View>
       )}
 
-  
-      <View style={styles.actionsContainer}>
-        {
-          stats && stats.totalWords > 0 && (
-        
-        <Pressable style={styles.primaryButton} onPress={handleStartReview}>
-          <Text style={styles.primaryButtonText}>{i18n.t('startReview')}</Text>
-        </Pressable>
-        )
-        }
+      {/* Stats Row */}
+      {stats && (
+        <Animated.View entering={FadeInDown.delay(300)} style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statIcon}>📚</Text>
+            <Text style={styles.statNumber}>{stats.totalWords}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+          <View style={[styles.statItem, styles.statItemHighlight]}>
+            <Text style={styles.statIcon}>⭐</Text>
+            <Text style={[styles.statNumber, { color: AppColors.primary }]}>{stats.masteredWords}</Text>
+            <Text style={styles.statLabel}>Mastered</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statIcon}>🆕</Text>
+            <Text style={[styles.statNumber, { color: AppColors.info }]}>{newWords}</Text>
+            <Text style={styles.statLabel}>To Learn</Text>
+          </View>
+        </Animated.View>
+      )}
+
+      {/* Actions */}
+      <Animated.View entering={FadeInDown.delay(400)} style={styles.actions}>
+        {stats && stats.totalWords > 0 && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.primaryButton,
+              pressed && styles.primaryButtonPressed,
+            ]}
+            onPress={handleStartReview}
+          >
+            <Ionicons name="play" size={22} color={AppColors.white} />
+            <Text style={styles.primaryButtonText}>{i18n.t('startReview')}</Text>
+          </Pressable>
+        )}
 
         <Pressable
-          style={styles.secondaryButton}
+          style={({ pressed }) => [
+            styles.secondaryButton,
+            pressed && styles.secondaryButtonPressed,
+          ]}
           onPress={() => router.push('/select-deck')}
         >
+          <Ionicons name="albums-outline" size={20} color={AppColors.primary} />
           <Text style={styles.secondaryButtonText}>{i18n.t('addNewDeck')}</Text>
         </Pressable>
-      </View>
 
+        <Pressable
+          style={({ pressed }) => [
+            styles.tertiaryButton,
+            pressed && styles.tertiaryButtonPressed,
+          ]}
+          onPress={() => router.push('/add-card')}
+        >
+          <Ionicons name="add-circle-outline" size={20} color={AppColors.textMuted} />
+          <Text style={styles.tertiaryButtonText}>{i18n.t('addCard')}</Text>
+        </Pressable>
+      </Animated.View>
+
+      {/* Empty state */}
       {stats && stats.totalWords === 0 && (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            {i18n.t('noDecks')}
-          </Text>
-          <Text style={styles.emptyStateSubtext}>
-            {i18n.t('noDecksSubtitle')}
-          </Text>
-        </View>
+        <Animated.View entering={FadeInDown.delay(300)} style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>📖</Text>
+          <Text style={styles.emptyTitle}>{i18n.t('noDecks')}</Text>
+          <Text style={styles.emptySubtext}>{i18n.t('noDecksSubtitle')}</Text>
+        </Animated.View>
       )}
     </ScrollView>
-  )
+  );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
-    padding: 20,
+    backgroundColor: AppColors.background,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
+    backgroundColor: AppColors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#58cc02',
-    marginBottom: 36,
-    marginTop: 60,
-    textAlign: 'center',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 40,
-  },
-  statCard: {
-    backgroundColor: '#1f1f1f',
-    borderRadius: 12,
-    padding: 20,
-    flex: 1,
-    marginHorizontal: 5,
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+  header: {
+    paddingTop: 70,
+    paddingHorizontal: 24,
     marginBottom: 8,
   },
-  masteredColor: {
-    color: '#58cc02',
+  greeting: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: AppColors.text,
+    marginBottom: 6,
   },
-  learningColor: {
-    color: '#1cb0f6',
+  motivation: {
+    fontSize: 15,
+    color: AppColors.textMuted,
+    lineHeight: 20,
+  },
+  ringSection: {
+    alignItems: 'center',
+    paddingVertical: 28,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    gap: 10,
+    marginBottom: 32,
+  },
+  statItem: {
+    flex: 1,
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  statItemHighlight: {
+    backgroundColor: AppColors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+  },
+  statIcon: {
+    fontSize: 20,
+    marginBottom: 6,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: AppColors.text,
   },
   statLabel: {
     fontSize: 12,
-    color: '#aaa',
-    textAlign: 'center',
+    color: AppColors.textMuted,
+    marginTop: 4,
   },
-  actionsContainer: {
-    marginBottom: 40,
+  actions: {
+    paddingHorizontal: 20,
+    gap: 12,
   },
   primaryButton: {
-    backgroundColor: '#58cc02',
-    borderRadius: 12,
-    padding: 18,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'center',
+    backgroundColor: AppColors.primary,
+    borderRadius: 16,
+    paddingVertical: 18,
+    gap: 10,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  primaryButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   primaryButtonText: {
-    color: '#fff',
+    color: AppColors.white,
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   secondaryButton: {
-    backgroundColor: '#1f1f1f',
-    borderRadius: 12,
-    padding: 18,
+    flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#58cc02',
+    justifyContent: 'center',
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    paddingVertical: 16,
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: AppColors.primary,
+  },
+  secondaryButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.98 }],
   },
   secondaryButtonText: {
-    color: '#58cc02',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: AppColors.primary,
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  tertiaryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  tertiaryButtonPressed: {
+    opacity: 0.75,
+  },
+  tertiaryButtonText: {
+    color: AppColors.textMuted,
+    fontSize: 15,
+    fontWeight: '500',
   },
   emptyState: {
-    padding: 20,
     alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 20,
   },
-  emptyStateText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  emptyEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    color: AppColors.text,
+    fontSize: 20,
+    fontWeight: '700',
     textAlign: 'center',
     marginBottom: 8,
   },
-  emptyStateSubtext: {
-    color: '#aaa',
-    fontSize: 14,
+  emptySubtext: {
+    color: AppColors.textMuted,
+    fontSize: 15,
     textAlign: 'center',
+    lineHeight: 22,
   },
-})
+});

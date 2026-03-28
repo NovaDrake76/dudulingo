@@ -1,76 +1,95 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  Easing,
+  FadeInDown,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import GoogleIcon from '../../components/icons/GoogleIcon';
-import { loginWithGoogle } from '../../services/auth';
+import { AppColors } from '../../constants/theme';
 import i18n, { setLocale } from '../../services/i18n';
 
 export default function SignIn() {
-  const [loading, setLoading] = useState(false);
+  const floatY = useSharedValue(0);
+  const locale = i18n.locale;
 
-const handleGoogleLogin = async () => {
-    setLoading(true);
-    try {
-      const result = await loginWithGoogle();
-      if (result && !result.success) {
-        alert(result.error || 'Failed to login. Please try again.');
-      }
-      
+  useEffect(() => {
+    floatY.value = withRepeat(
+      withTiming(-12, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      -1,
+      true,
+    );
+  }, []);
 
-    } catch (error) {
-      console.error('Login error:', error);
-      alert('An unexpected error occurred during login.');
-    } finally {
-      setLoading(false);
+  const floatingStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: floatY.value }],
+  }));
+
+  const handleLogin = () => {
+    const redirectUri = window?.location
+      ? window.location.origin + '/auth/callback'
+      : 'http://localhost:8081/auth/callback';
+    const stateData = JSON.stringify({ redirectUri });
+    const stateBase64 = btoa(stateData);
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
+    const googleAuthUrl = apiUrl + '/auth/google?state=' + encodeURIComponent(stateBase64);
+    if (typeof window !== 'undefined') {
+      window.location.href = googleAuthUrl;
+    } else {
+      router.push(googleAuthUrl as any);
     }
   };
-  const changeLocale = (locale: string) => {
-    setLocale(locale);
+
+  const changeLocale = (newLocale: string) => {
+    setLocale(newLocale);
     router.replace('/auth/sign-in');
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.languageSelector}>
+      <View style={styles.localeRow}>
         <Pressable onPress={() => changeLocale('en')}>
-          <Text style={i18n.locale === 'en' ? styles.activeLanguage : styles.language}>EN</Text>
+          <Text style={locale === 'en' ? styles.activeLocale : styles.locale}>EN</Text>
         </Pressable>
-        <Text style={styles.language}>|</Text>
+        <Text style={styles.locale}>|</Text>
         <Pressable onPress={() => changeLocale('pt-BR')}>
-          <Text style={i18n.locale === 'pt-BR' ? styles.activeLanguage : styles.language}>PT-BR</Text>
+          <Text style={locale === 'pt-BR' ? styles.activeLocale : styles.locale}>PT-BR</Text>
         </Pressable>
       </View>
+
       <View style={styles.card}>
-        <Image
-          source={require('../../assets/images/repecardsLogo.png')}
-          style={styles.logo}
-          resizeMode="contain"
-        />
+        <Animated.View style={floatingStyle}>
+          <Image
+            source={require('../../assets/images/repecardsLogo.png')}
+            style={styles.logo}
+          />
+        </Animated.View>
 
-        <Text style={styles.title}>{i18n.t('signInTitle')}</Text>
-        <Text style={styles.subtitle}>{i18n.t('signInSubtitle')}</Text>
+        <Animated.Text entering={FadeInDown.delay(200)} style={styles.title}>
+          Repecards
+        </Animated.Text>
+        <Animated.Text entering={FadeInDown.delay(350)} style={styles.subtitle}>
+          {i18n.t('signInSubtitle')}
+        </Animated.Text>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.googleButton,
-            pressed && styles.googleButtonPressed,
-          ]}
-          onPress={handleGoogleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#1f1f1f" />
-          ) : (
-            <>
-              <GoogleIcon />
-              <Text style={styles.googleText}>{i18n.t('continueWithGoogle')}</Text>
-            </>
-          )}
-        </Pressable>
+        <Animated.View entering={FadeInDown.delay(500)} style={{ width: '100%' }}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.googleButton,
+              pressed && styles.googleButtonPressed,
+            ]}
+            onPress={handleLogin}
+          >
+            <GoogleIcon />
+            <Text style={styles.googleButtonText}>{i18n.t('continueWithGoogle')}</Text>
+          </Pressable>
+        </Animated.View>
 
-        <Text style={styles.footer}>
-          {i18n.t('termsOfService')}
-        </Text>
+        <Text style={styles.terms}>{i18n.t('termsOfService')}</Text>
       </View>
     </View>
   );
@@ -79,87 +98,89 @@ const handleGoogleLogin = async () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
+    backgroundColor: AppColors.background,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
-  languageSelector: {
+  localeRow: {
+    position: 'absolute',
+    top: 50,
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 20,
+    gap: 12,
   },
-  language: {
-    color: '#ccc',
-    fontSize: 16,
-    marginHorizontal: 10,
+  locale: {
+    color: AppColors.textMuted,
+    fontSize: 15,
   },
-  activeLanguage: {
-    color: '#58cc02',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginHorizontal: 10,
+  activeLocale: {
+    color: AppColors.primary,
+    fontSize: 15,
+    fontWeight: '700',
   },
   card: {
-    backgroundColor: '#121212',
+    backgroundColor: AppColors.surface,
+    borderRadius: 24,
+    padding: 32,
     width: '100%',
     maxWidth: 420,
-    paddingVertical: 48,
-    paddingHorizontal: 32,
-    borderRadius: 24,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: AppColors.border,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
   },
   logo: {
-    width: 200,
-    height: 200,
-    marginBottom: 24,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 44,
-    fontWeight: 'bold',
-    color: '#58cc02',
-    marginBottom: 6,
+    fontSize: 36,
+    fontWeight: '800',
+    color: AppColors.primary,
+    marginBottom: 8,
   },
   subtitle: {
-    color: '#ccc',
-    fontSize: 18,
+    fontSize: 15,
+    color: AppColors.textMuted,
     textAlign: 'center',
-    marginBottom: 36,
+    marginBottom: 32,
+    lineHeight: 22,
   },
   googleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: AppColors.white,
     borderRadius: 14,
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    width: '100%',
-    gap: 10,
+    paddingHorizontal: 24,
+    gap: 12,
+    shadowColor: AppColors.black,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
     elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
   },
   googleButtonPressed: {
     opacity: 0.9,
-    transform: [{ scale: 0.97 }],
+    transform: [{ scale: 0.98 }],
   },
-  googleText: {
-    color: '#1f1f1f',
-    fontSize: 17,
+  googleButtonText: {
+    color: AppColors.dark,
+    fontSize: 16,
     fontWeight: '600',
   },
-  footer: {
-    color: '#777',
+  terms: {
+    color: AppColors.textDim,
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 28,
+    marginTop: 20,
+    lineHeight: 18,
   },
 });

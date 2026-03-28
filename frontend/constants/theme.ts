@@ -1,9 +1,59 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * App-wide color palette used across all screens and components.
  */
 
 import { Platform } from "react-native";
+
+export const AppColors = {
+  // Backgrounds with depth layers
+  background: '#090909',
+  surface: '#141414',
+  surfaceAlt: '#111111',
+  surfaceElevated: '#1c1c1c',
+  surfaceHighlight: '#252525',
+
+  // Primary & accents
+  primary: '#58cc02',
+  primaryDark: '#46a302',
+  primaryLight: '#7de033',
+  accent: '#a855f7',
+  amber: '#f59e0b',
+  info: '#1cb0f6',
+  error: '#ff4b4b',
+  danger: '#EA4335',
+
+  // Text hierarchy
+  text: '#f5f5f5',
+  textSecondary: '#c0c0c0',
+  textMuted: '#8a8a8a',
+  textSubtle: '#b0b0b0',
+  textDim: '#555',
+
+  // Borders & dividers
+  border: '#2a2a2a',
+  borderLight: '#383838',
+  divider: '#1e1e1e',
+
+  // Misc
+  white: '#fff',
+  black: '#000',
+  dark: '#333',
+  correctBg: 'rgba(88, 204, 2, 0.15)',
+  wrongBg: 'rgba(255, 75, 75, 0.15)',
+  cardShadow: 'rgba(0, 0, 0, 0.4)',
+
+  // Deck theme colors (gradient pairs)
+  deckColors: [
+    ['#f97316', '#ea580c'],
+    ['#8b5cf6', '#7c3aed'],
+    ['#06b6d4', '#0891b2'],
+    ['#ec4899', '#db2777'],
+    ['#10b981', '#059669'],
+    ['#f59e0b', '#d97706'],
+    ['#6366f1', '#4f46e5'],
+    ['#ef4444', '#dc2626'],
+  ],
+};
 
 const tintColorLight = "#0a7ea4";
 const tintColorDark = "#fff";

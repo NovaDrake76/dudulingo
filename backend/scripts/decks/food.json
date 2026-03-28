@@ -1,0 +1,27 @@
+{
+  "deckName": "Comida",
+  "deckDescription": "Palavras comuns sobre alimentos e bebidas em inglês.",
+  "lang": "pt-BR",
+  "words": [
+    { "prompt": "Maçã", "answer": "Apple" },
+    { "prompt": "Pão", "answer": "Bread" },
+    { "prompt": "Queijo", "answer": "Cheese" },
+    { "prompt": "Arroz", "answer": "Rice" },
+    { "prompt": "Frango", "answer": "Chicken" },
+    { "prompt": "Ovo", "answer": "Egg" },
+    { "prompt": "Leite", "answer": "Milk" },
+    { "prompt": "Água", "answer": "Water" },
+    { "prompt": "Carne", "answer": "Meat" },
+    { "prompt": "Peixe", "answer": "Fish" },
+    { "prompt": "Banana", "answer": "Banana" },
+    { "prompt": "Tomate", "answer": "Tomato" },
+    { "prompt": "Batata", "answer": "Potato" },
+    { "prompt": "Café", "answer": "Coffee" },
+    { "prompt": "Suco", "answer": "Juice" },
+    { "prompt": "Manteiga", "answer": "Butter" },
+    { "prompt": "Sal", "answer": "Salt" },
+    { "prompt": "Açúcar", "answer": "Sugar" },
+    { "prompt": "Laranja", "answer": "Orange" },
+    { "prompt": "Morango", "answer": "Strawberry" }
+  ]
+}

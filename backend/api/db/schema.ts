@@ -17,6 +17,9 @@ export interface ICard extends Document {
   prompt?: string
   answer: string
   imageUrl?: string
+  imageSource?: string
+  imageLicense?: string
+  audioUrl?: string
   lang?: string
 }
 
@@ -60,6 +63,9 @@ const CardSchema = new Schema<ICard>(
     prompt: String,
     answer: { type: String, required: true },
     imageUrl: String,
+    imageSource: String,
+    imageLicense: String,
+    audioUrl: String,
     lang: String,
   },
   { timestamps: true, _id: false }

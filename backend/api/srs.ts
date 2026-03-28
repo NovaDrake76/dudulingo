@@ -18,15 +18,16 @@ export function calculateSrs(
 ) {
   const quality = RATING_TO_QUALITY[rating]
 
+  // Always recalculate ease factor per SM-2 spec
+  const newEaseFactor =
+    progress.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+  progress.easeFactor = Math.max(1.3, newEaseFactor)
+
   if (quality < 3) {
     progress.repetitions = 0
     progress.interval = 1
   } else {
     progress.repetitions += 1
-
-    const newEaseFactor =
-      progress.easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-    progress.easeFactor = Math.max(1.3, newEaseFactor)
 
     if (progress.repetitions === 1) {
       progress.interval = 1

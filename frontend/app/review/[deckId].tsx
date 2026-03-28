@@ -2,8 +2,10 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { AppColors } from '../../constants/theme';
 import { api } from '../../services/api';
 import i18n from '../../services/i18n';
+import logger from '../../services/logger';
 import { AnswerInput } from './components/AnswerInput';
 import { AnswerOptions } from './components/AnswerOptions';
 import { FeedbackDisplay } from './components/FeedbackDisplay';
@@ -16,6 +18,7 @@ type QuestionData = {
   questionType: string;
   correctAnswer: string;
   imageUrl?: string;
+  audioUrl?: string;
   word?: string;
   prompt?: string;
   options?: string[] | { text: string; imageUrl: string }[];
@@ -23,6 +26,7 @@ type QuestionData = {
     word: string;
     translation: string;
     imageUrl?: string;
+    audioUrl?: string;
   };
 };
 
@@ -66,7 +70,7 @@ export default function Review() {
           ]);
         }
       } catch (error) {
-        console.error('Failed to start session:', error);
+        logger.error('Failed to start session', { error: String(error) });
         Alert.alert(i18n.t('error'), i18n.t('failedToStartSession'), [
           { text: 'OK', onPress: () => router.back() },
         ]);
@@ -101,7 +105,11 @@ export default function Review() {
 
   const handleNext = async () => {
     if (!currentQuestion) return;
-    const rating = isCorrect ? 'easy' : 'very_hard';
+    const rating = !isCorrect
+      ? 'very_hard'
+      : currentQuestion.questionType?.includes('type_answer')
+        ? 'medium'
+        : 'easy';
 
     try {
       await api.submitReview(currentQuestion.cardId, rating);
@@ -122,7 +130,7 @@ export default function Review() {
       setIsCorrect(false);
       flipAnimation.value = 0;
     } catch (error) {
-      console.error('Failed to submit review:', error);
+      logger.error('Failed to submit review', { error: String(error) });
       Alert.alert(i18n.t('error'), i18n.t('failedToSaveProgress'));
     }
   };
@@ -147,7 +155,7 @@ export default function Review() {
 if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color={AppColors.primary} />
       </View>
     );
   }
@@ -165,6 +173,14 @@ if (loading) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[
+              styles.progressBarFill,
+              { width: `${((currentQuestionIndex + 1) / sessionCards.length) * 100}%` },
+            ]}
+          />
+        </View>
         <Animated.Text style={styles.progressText}>
           {`${i18n.t('card')} ${currentQuestionIndex + 1} ${i18n.t('of')} ${sessionCards.length}`}
         </Animated.Text>

@@ -1,6 +1,9 @@
-# Repecards Documentation
+# Dudulingo
 
-Welcome to the official documentation for Repecards, a language-learning app designed to help users memorize new words efficiently through spaced repetition.
+![CI Status](https://github.com/yourusername/dudulingo/workflows/Backend%20CI%2FCD/badge.svg)
+![Frontend CI](https://github.com/yourusername/dudulingo/workflows/Frontend%20CI/badge.svg)
+
+A language-learning mobile app designed to help users memorize new words efficiently through spaced repetition and adaptive learning.
 
 ## 1. Project Overview
 
@@ -29,24 +32,74 @@ Repecards is a mobile application built with a React Native frontend and a Node.
 * Expo CLI
 * MongoDB instance
 
-### 2.2. Backend Setup
+### 2.2. Quick Start (Docker)
 
-1.  Navigate to the `backend` directory.
-2.  Install dependencies: `npm install`
-3.  Create a `.env` file and configure the following variables:
-    * `DATABASE_URL`: Your MongoDB connection string.
-    * `GOOGLE_CLIENT_ID`: Your Google OAuth client ID.
-    * `GOOGLE_CLIENT_SECRET`: Your Google OAuth client secret.
-    * `JWT_SECRET`: A secret key for signing JWTs.
-    * `API_URL`: The public URL of your backend (e.g., `http://localhost:8000`).
-4.  Start the development server: `npm run dev`
+**Recommended for first-time setup:**
 
-### 2.3. Frontend Setup
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/dudulingo.git
+cd dudulingo/backend
 
-1.  Navigate to the `frontend` directory.
-2.  Install dependencies: `npm install`
-3.  Create a `.env` file and add: `EXPO_PUBLIC_API_URL=http://localhost:8000` (or your backend URL).
-4.  Start the development server: `npx expo start`
+# Copy environment template
+cp .env.example .env
+# Edit .env with your Google OAuth credentials
+
+# Start with Docker Compose
+docker-compose up -d
+
+# Backend running at http://localhost:8000
+```
+
+### 2.3. Manual Setup
+
+**Backend:**
+```bash
+cd backend
+npm install
+cp .env.example .env
+# Edit .env with your credentials
+npm run dev
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm install
+cp .env.example .env
+# Edit .env with backend URL
+npx expo start
+```
+
+For detailed setup instructions, see [Local Development Guide](docs/LOCAL_DEVELOPMENT.md).
+
+---
+
+## 3. Deployment
+
+### Production Deployment
+
+Dudulingo is production-ready with:
+- ✅ Environment validation on startup
+- ✅ CORS security with origin whitelisting
+- ✅ Rate limiting (general, auth, review)
+- ✅ Input validation with Zod schemas
+- ✅ Access control (users can only modify their own data)
+- ✅ Health check endpoints
+- ✅ Graceful shutdown
+- ✅ Docker containerization
+- ✅ CI/CD pipelines (GitHub Actions)
+
+**Deploy to production**: See [Deployment Guide](docs/DEPLOYMENT.md)
+
+**Key deployment platforms:**
+- Backend: Render.com (or any Node.js host)
+- Database: MongoDB Atlas (free tier available)
+- Frontend: Expo Application Services (EAS)
+
+### Environment Variables
+
+See [Environment Variables Reference](docs/ENVIRONMENT_VARIABLES.md) for complete documentation.
 
 ---
 

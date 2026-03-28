@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getToken } from "./auth";
+import logger from "./logger";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -9,6 +10,10 @@ const authenticatedFetch = async (
   options: RequestInit = {},
 ) => {
   const token = await getToken();
+  const url = `${API_URL}${endpoint}`;
+  const method = options.method || "GET";
+
+  logger.debug(`API request: ${method} ${url}`);
 
   const headers: HeadersInit = {
     "Content-Type": "application/json",
@@ -16,14 +21,22 @@ const authenticatedFetch = async (
     ...options.headers,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    });
+  } catch (err) {
+    logger.error(`Network error: ${method} ${url}`, { error: String(err) });
+    throw err;
+  }
+
+  logger.debug(`API response: ${method} ${url} ${response.status}`);
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error("API Error Response:", errorBody);
+    logger.error("API error response", { status: response.status, url, body: errorBody });
     throw new Error(`API error: ${response.statusText}`);
   }
 
@@ -64,9 +77,9 @@ export const api = {
   },
 
   // decks endpoints
-  async getAllDecks(lang?: string) {
-    const query = lang ? `?lang=${lang}` : "";
-    return authenticatedFetch(`/decks${query}`);
+  async getAllDecks() {
+    const result = await authenticatedFetch("/decks?limit=100");
+    return result.data || result;
   },
 
   async getDeck(deckId: string) {
@@ -87,5 +100,35 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ cardId, rating }),
     });
+  },
+
+  // card management
+  async createCard(data: {
+    type: string;
+    prompt: string;
+    answer: string;
+    imageUrl?: string;
+    imageSource?: string;
+    imageLicense?: string;
+    lang?: string;
+    deckId?: string;
+  }) {
+    return authenticatedFetch("/cards", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async createDeck(data: { name: string; description?: string }) {
+    return authenticatedFetch("/decks", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async searchImages(query: string) {
+    return authenticatedFetch(
+      `/images/search?query=${encodeURIComponent(query)}`
+    );
   },
 };

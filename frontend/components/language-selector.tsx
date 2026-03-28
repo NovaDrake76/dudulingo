@@ -1,4 +1,5 @@
 import { Image, ImageSourcePropType, Pressable, StyleSheet, Text } from 'react-native'
+import { AppColors } from '../constants/theme'
 
 type LanguageSelectorProps = {
   languageName: string
@@ -17,14 +18,14 @@ export default function LanguageSelector({ languageName, flagSource, onPress }: 
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: '#1f1f1f',
+    backgroundColor: AppColors.surfaceElevated,
     borderRadius: 14,
     padding: 20,
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
+    shadowColor: AppColors.black,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 5,
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   text: {
-    color: '#fff',
+    color: AppColors.white,
     fontSize: 24,
     fontWeight: 'bold',
   },

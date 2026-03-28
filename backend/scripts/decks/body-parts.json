@@ -1,0 +1,27 @@
+{
+  "deckName": "Partes do Corpo",
+  "deckDescription": "Vocabulário sobre o corpo humano em inglês.",
+  "lang": "pt-BR",
+  "words": [
+    { "prompt": "Cabeça", "answer": "Head" },
+    { "prompt": "Olho", "answer": "Eye" },
+    { "prompt": "Orelha", "answer": "Ear" },
+    { "prompt": "Nariz", "answer": "Nose" },
+    { "prompt": "Boca", "answer": "Mouth" },
+    { "prompt": "Dente", "answer": "Tooth" },
+    { "prompt": "Língua", "answer": "Tongue" },
+    { "prompt": "Mão", "answer": "Hand" },
+    { "prompt": "Dedo", "answer": "Finger" },
+    { "prompt": "Braço", "answer": "Arm" },
+    { "prompt": "Perna", "answer": "Leg" },
+    { "prompt": "Pé", "answer": "Foot" },
+    { "prompt": "Joelho", "answer": "Knee" },
+    { "prompt": "Ombro", "answer": "Shoulder" },
+    { "prompt": "Pescoço", "answer": "Neck" },
+    { "prompt": "Coração", "answer": "Heart" },
+    { "prompt": "Cabelo", "answer": "Hair" },
+    { "prompt": "Costas", "answer": "Back" },
+    { "prompt": "Barriga", "answer": "Belly" },
+    { "prompt": "Peito", "answer": "Chest" }
+  ]
+}

@@ -1,15 +1,32 @@
 import { Router } from 'express'
+import passport from 'passport'
+import jwtStrategy from '../auth/jwtStrategy.ts'
+import type { IUser } from '../db/schema.ts'
 import { Deck } from '../db/schema.ts'
+import logger from '../logger.ts'
+import { verifyDeckOwnership } from '../middleware/ownership.ts'
+import { validate } from '../middleware/validation.ts'
+import {
+  createDeckSchema,
+  deckIdParamSchema,
+  paginationQuerySchema,
+  updateDeckSchema,
+} from '../schemas/deck.schema.ts'
 
 const router = Router()
 
-// create a new deck
-router.post('/', async (req, res) => {
-  try {
-    const { name, description, ownerId } = req.body
+const authenticateJwt = passport.authenticate(jwtStrategy, { session: false })
 
-    if (!name || !ownerId) {
-      return res.status(400).json({ error: 'Name and ownerId are required' })
+router.use(authenticateJwt)
+
+// create a new deck
+router.post('/', validate(createDeckSchema), async (req: any, res) => {
+  try {
+    const { name, description } = req.body
+    const ownerId = (req.user as IUser)._id
+
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' })
     }
 
     const newDeck = new Deck({
@@ -21,18 +38,23 @@ router.post('/', async (req, res) => {
     await newDeck.save()
     res.status(201).json(newDeck)
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to create deck', { error: err })
     res.status(500).json({ error: 'Failed to create deck' })
   }
 })
 
-router.get('/', async (req, res) => {
+router.get('/', validate(paginationQuerySchema), async (req, res) => {
   try {
-    const filter: Record<string, string> = {}
-    if (req.query.lang && typeof req.query.lang === 'string') {
-      filter.lang = req.query.lang
-    }
-    const allDecks = await Deck.find(filter).populate('ownerId')
+    const userId = (req.user as IUser)._id
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20))
+    const skip = (page - 1) * limit
+
+    // Filter decks by ownership - users only see their own decks
+    const [allDecks, total] = await Promise.all([
+      Deck.find({ ownerId: userId }).populate('ownerId').skip(skip).limit(limit),
+      Deck.countDocuments({ ownerId: userId }),
+    ])
 
     const decksWithCount = allDecks.map((deck) => {
       const deckObject = deck.toObject()
@@ -43,56 +65,50 @@ router.get('/', async (req, res) => {
       }
     })
 
-    res.json(decksWithCount)
+    res.json({ data: decksWithCount, total, page, limit })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to fetch decks', { error: err })
     res.status(500).json({ error: 'Failed to fetch decks' })
   }
 })
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', validate(deckIdParamSchema), verifyDeckOwnership, async (req, res) => {
   try {
     const { id } = req.params
     const deck = await Deck.findById(id).populate('ownerId').populate('cards')
 
-    if (!deck) {
-      return res.status(404).json({ error: 'Deck not found' })
-    }
+    // Deck existence and ownership already verified by middleware
     res.json(deck)
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to fetch deck', { error: err })
     res.status(500).json({ error: 'Failed to fetch deck' })
   }
 })
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', validate(updateDeckSchema), verifyDeckOwnership, async (req, res) => {
   try {
     const { id } = req.params
     const { name, description } = req.body
 
     const updatedDeck = await Deck.findByIdAndUpdate(id, { name, description }, { new: true })
 
-    if (!updatedDeck) {
-      return res.status(404).json({ error: 'Deck not found' })
-    }
+    // Deck existence and ownership already verified by middleware
     res.json(updatedDeck)
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to update deck', { error: err })
     res.status(500).json({ error: 'Failed to update deck' })
   }
 })
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', validate(deckIdParamSchema), verifyDeckOwnership, async (req, res) => {
   try {
     const { id } = req.params
     const deletedDeck = await Deck.findByIdAndDelete(id)
 
-    if (!deletedDeck) {
-      return res.status(404).json({ error: 'Deck not found' })
-    }
+    // Deck existence and ownership already verified by middleware
     res.status(204).send()
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to delete deck', { error: err })
     res.status(500).json({ error: 'Failed to delete deck' })
   }
 })

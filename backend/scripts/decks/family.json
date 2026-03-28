@@ -1,0 +1,22 @@
+{
+  "deckName": "Família",
+  "deckDescription": "Palavras sobre família e relacionamentos em inglês.",
+  "lang": "pt-BR",
+  "words": [
+    { "prompt": "Mãe", "answer": "Mother" },
+    { "prompt": "Pai", "answer": "Father" },
+    { "prompt": "Irmão", "answer": "Brother" },
+    { "prompt": "Irmã", "answer": "Sister" },
+    { "prompt": "Filho", "answer": "Son" },
+    { "prompt": "Filha", "answer": "Daughter" },
+    { "prompt": "Avô", "answer": "Grandfather" },
+    { "prompt": "Avó", "answer": "Grandmother" },
+    { "prompt": "Tio", "answer": "Uncle" },
+    { "prompt": "Tia", "answer": "Aunt" },
+    { "prompt": "Primo", "answer": "Cousin" },
+    { "prompt": "Marido", "answer": "Husband" },
+    { "prompt": "Esposa", "answer": "Wife" },
+    { "prompt": "Bebê", "answer": "Baby" },
+    { "prompt": "Amigo", "answer": "Friend" }
+  ]
+}

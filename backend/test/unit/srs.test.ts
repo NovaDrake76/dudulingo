@@ -22,24 +22,37 @@ describe('calculateSrs', () => {
   });
 
   describe('Reset Logic (Quality < 3)', () => {
-    it('should reset repetitions and interval when rating is "very_hard"', () => {
+    it('should reset repetitions and interval when rating is "very_hard" and decrease EF', () => {
       const input = createProgress({ repetitions: 5, interval: 20, easeFactor: 2.5 });
-      
+
       const result = calculateSrs(input, 'very_hard');
 
       expect(result.repetitions).toBe(0);
       expect(result.interval).toBe(1);
-      // Ease factor should NOT change on failure in this implementation
-      expect(result.easeFactor).toBe(2.5);
+      // SM-2: EF always recalculated. very_hard (q=0): 2.5 + (0.1 - 5*(0.08+5*0.02)) = 2.5 - 0.8 = 1.7
+      expect(result.easeFactor).toBeCloseTo(1.7);
     });
 
-    it('should reset repetitions and interval when rating is "hard"', () => {
+    it('should reset repetitions and interval when rating is "hard" and decrease EF', () => {
       const input = createProgress({ repetitions: 10, interval: 50 });
-      
+
       const result = calculateSrs(input, 'hard');
 
       expect(result.repetitions).toBe(0);
       expect(result.interval).toBe(1);
+      // hard (q=1): 2.5 + (0.1 - 4*(0.08+4*0.02)) = 2.5 - 0.54 = 1.96
+      expect(result.easeFactor).toBeCloseTo(1.96);
+    });
+
+    it('should clamp EF to 1.3 on repeated failures', () => {
+      const input = createProgress({ repetitions: 3, interval: 10, easeFactor: 1.5 });
+
+      const result = calculateSrs(input, 'very_hard');
+
+      expect(result.repetitions).toBe(0);
+      expect(result.interval).toBe(1);
+      // 1.5 - 0.8 = 0.7, clamped to 1.3
+      expect(result.easeFactor).toBe(1.3);
     });
   });
 

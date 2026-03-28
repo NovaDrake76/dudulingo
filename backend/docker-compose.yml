@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # MongoDB database
+  mongodb:
+    image: mongo:7.0
+    container_name: dudulingo-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: admin123
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dudulingo-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dudulingo-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=mongodb://admin:admin123@mongodb:27017/dudulingo?authSource=admin
+      - JWT_SECRET=local_dev_secret_min_32_characters_long_for_docker
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - PORT=8000
+      - NODE_ENV=development
+      - IS_DEV=true
+      - LOG_LEVEL=http
+      - ALLOWED_ORIGINS=http://localhost:19000,http://localhost:8081,exp://localhost:8081
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - dudulingo-network
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  dudulingo-network:
+    driver: bridge

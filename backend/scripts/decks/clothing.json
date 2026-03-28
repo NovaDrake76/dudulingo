@@ -1,0 +1,22 @@
+{
+  "deckName": "Roupas",
+  "deckDescription": "Vocabulário sobre roupas e acessórios em inglês.",
+  "lang": "pt-BR",
+  "words": [
+    { "prompt": "Camisa", "answer": "Shirt" },
+    { "prompt": "Calça", "answer": "Pants" },
+    { "prompt": "Sapato", "answer": "Shoe" },
+    { "prompt": "Vestido", "answer": "Dress" },
+    { "prompt": "Chapéu", "answer": "Hat" },
+    { "prompt": "Casaco", "answer": "Coat" },
+    { "prompt": "Saia", "answer": "Skirt" },
+    { "prompt": "Meia", "answer": "Sock" },
+    { "prompt": "Cinto", "answer": "Belt" },
+    { "prompt": "Luva", "answer": "Glove" },
+    { "prompt": "Cachecol", "answer": "Scarf" },
+    { "prompt": "Bota", "answer": "Boot" },
+    { "prompt": "Jaqueta", "answer": "Jacket" },
+    { "prompt": "Gravata", "answer": "Tie" },
+    { "prompt": "Óculos", "answer": "Glasses" }
+  ]
+}

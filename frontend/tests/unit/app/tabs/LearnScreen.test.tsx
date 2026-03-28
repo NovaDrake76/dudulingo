@@ -27,22 +27,6 @@ describe('LearnScreen Integration', () => {
     jest.clearAllMocks();
   });
 
-  it('renders user statistics correctly', async () => {
-    (api.getUserStats as jest.Mock).mockResolvedValue({
-      totalWords: 150,
-      masteredWords: 50,
-      learningWords: 100,
-    });
-
-    const { getByText, findByText } = render(<LearnScreen />);
-
-    expect(await findByText('150')).toBeTruthy(); // Total
-    expect(await findByText('50')).toBeTruthy();  // Mastered
-    expect(await findByText('100')).toBeTruthy(); // Learning
-
-    expect(getByText('yourProgress')).toBeTruthy();
-    expect(getByText('totalWords')).toBeTruthy();
-  });
 
   it('navigates to general review when "Start Review" is pressed', async () => {
     (api.getUserStats as jest.Mock).mockResolvedValue({

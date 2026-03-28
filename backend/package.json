@@ -5,7 +5,10 @@
   "index.ts": "index.ts",
   "type": "module",
   "scripts": {
-    "dev": "node --env-file=.env --watch api/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "start:dev": "node --env-file=.env --watch api/index.ts",
+    "dev": "npm run start:dev",
     "lint": "eslint \"api/**/*.{ts,js}\" --max-warnings=0",
     "format": "prettier --write \"api/**/*.{ts,js,json,md}\"",
     "test": "vitest",
@@ -16,18 +19,23 @@
     "db:setup": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
-    "db:migrate": "tsx scripts/run-migration.ts"
+    "db:migrate": "tsx scripts/run-migration.ts",
+    "deck:make": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts",
+    "deck:seed": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts --seed"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.3.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.19.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "winston": "^3.19.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

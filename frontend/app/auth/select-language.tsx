@@ -2,8 +2,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import LanguageSelector from '../../components/language-selector';
+import { AppColors } from '../../constants/theme';
 import { api } from '../../services/api';
 import i18n from '../../services/i18n';
+import logger from '../../services/logger';
 
 export default function SelectLanguage() {
   const handleSelectLanguage = async (languageCode: string) => {
@@ -12,7 +14,7 @@ export default function SelectLanguage() {
       await AsyncStorage.setItem('selectedLanguage', languageCode);
       router.replace('/select-deck');
     } catch (error) {
-      console.error('Failed to save language:', error);
+      logger.error('Failed to save language', { error: String(error) });
       Alert.alert('Error', 'Failed to save language preference');
     }
   };
@@ -24,6 +26,12 @@ export default function SelectLanguage() {
         languageName="English"
         flagSource={require('../../assets/images/uk-flag.png')}
         onPress={() => handleSelectLanguage('en')}
+      />
+      <View style={{ height: 20 }} />
+      <LanguageSelector
+        languageName="Português (Brasil)"
+        flagSource={require('../../assets/images/br-flag.png')}
+        onPress={() => handleSelectLanguage('pt-BR')}
       />
       <View style={{ height: 20 }} />
       <LanguageSelector
@@ -45,7 +53,7 @@ export default function SelectLanguage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
+    backgroundColor: AppColors.background,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
@@ -53,7 +61,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#fff',
+    color: AppColors.white,
     marginBottom: 48,
     textAlign: 'center',
   },

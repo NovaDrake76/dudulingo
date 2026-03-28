@@ -1,8 +1,9 @@
 import { Router } from 'express'
 import passport from 'passport'
 import jwtStrategy from '../auth/jwtStrategy.ts'
-import type { ICard } from '../db/schema.ts'
+import type { ICard, IUser } from '../db/schema.ts'
 import { Deck, User, UserCardProgress } from '../db/schema.ts'
+import logger from '../logger.ts'
 
 const router = Router()
 
@@ -16,7 +17,7 @@ router.get('/me', (req: any, res) => {
 
 router.post('/language', async (req: any, res) => {
   try {
-    const userId = req.user.id
+    const userId = (req.user as IUser)._id
     const { language } = req.body
 
     if (!language) {
@@ -31,7 +32,7 @@ router.post('/language', async (req: any, res) => {
 
     res.json({ message: 'Language saved successfully', user: updatedUser })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to save language', { error: err })
     res.status(500).json({ error: 'Failed to save language' })
   }
 })
@@ -39,7 +40,7 @@ router.post('/language', async (req: any, res) => {
 // add a deck's cards to a user's learning list
 router.post('/decks/:deckId', async (req: any, res) => {
   try {
-    const userId = req.user.id
+    const userId = (req.user as IUser)._id
     const { deckId } = req.params
 
     const deck = await Deck.findById(deckId)
@@ -67,7 +68,7 @@ router.post('/decks/:deckId', async (req: any, res) => {
       cardsAdded: progressEntries.length,
     })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to add deck', { error: err })
     res.status(500).json({ error: 'Failed to add deck' })
   }
 })
@@ -75,7 +76,7 @@ router.post('/decks/:deckId', async (req: any, res) => {
 // get user stats
 router.get('/stats', async (req: any, res) => {
   try {
-    const userId = req.user.id
+    const userId = (req.user as IUser)._id
 
     const allProgress = await UserCardProgress.find({ userId })
 
@@ -89,7 +90,7 @@ router.get('/stats', async (req: any, res) => {
       learningWords,
     })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to fetch stats', { error: err })
     res.status(500).json({ error: 'Failed to fetch stats' })
   }
 })

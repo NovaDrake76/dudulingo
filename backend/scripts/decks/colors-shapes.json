@@ -1,0 +1,22 @@
+{
+  "deckName": "Cores e Formas",
+  "deckDescription": "Aprenda as cores e formas geométricas em inglês.",
+  "lang": "pt-BR",
+  "words": [
+    { "prompt": "Vermelho", "answer": "Red" },
+    { "prompt": "Azul", "answer": "Blue" },
+    { "prompt": "Verde", "answer": "Green" },
+    { "prompt": "Amarelo", "answer": "Yellow" },
+    { "prompt": "Preto", "answer": "Black" },
+    { "prompt": "Branco", "answer": "White" },
+    { "prompt": "Roxo", "answer": "Purple" },
+    { "prompt": "Rosa", "answer": "Pink" },
+    { "prompt": "Laranja", "answer": "Orange" },
+    { "prompt": "Marrom", "answer": "Brown" },
+    { "prompt": "Círculo", "answer": "Circle" },
+    { "prompt": "Quadrado", "answer": "Square" },
+    { "prompt": "Triângulo", "answer": "Triangle" },
+    { "prompt": "Estrela", "answer": "Star" },
+    { "prompt": "Coração", "answer": "Heart" }
+  ]
+}

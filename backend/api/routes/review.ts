@@ -3,6 +3,10 @@ import passport from 'passport'
 import jwtStrategy from '../auth/jwtStrategy.ts'
 import type { ICard, IUser, IUserCardProgress } from '../db/schema.ts'
 import { Card, Deck, UserCardProgress } from '../db/schema.ts'
+import logger from '../logger.ts'
+import { reviewLimiter } from '../middleware/rateLimiter.ts'
+import { validate } from '../middleware/validation.ts'
+import { deckIdParamSchema, submitReviewSchema } from '../schemas/review.schema.ts'
 import { calculateSrs } from '../srs.ts'
 
 const router = Router()
@@ -100,17 +104,22 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
       break
   }
 
+  if (card.audioUrl) {
+    questionData.audioUrl = card.audioUrl
+  }
+
   // this is the "correct answer" data for the flip-card feedback
   questionData.feedback = {
     word: card.answer,
     translation: card.prompt,
     imageUrl: card.imageUrl,
+    audioUrl: card.audioUrl,
   }
 
   return questionData
 }
 
-router.get('/session/general', async (req: any, res) => {
+router.get('/session/general', reviewLimiter, async (req: any, res) => {
   try {
     const userId = (req.user as IUser)._id
     const sessionSize = 10
@@ -162,15 +171,15 @@ router.get('/session/general', async (req: any, res) => {
 
     res.json({ cards: sessionQuestions })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to create general review session', { error: err })
     res.status(500).json({ error: 'Failed to create general review session' })
   }
 })
 
 // Get review session for a specific deck
-router.get('/deck/:deckId', async (req: any, res) => {
+router.get('/deck/:deckId', validate(deckIdParamSchema), async (req: any, res) => {
   try {
-    const userId = req.user.id
+    const userId = (req.user as IUser)._id
     const { deckId } = req.params
 
     const deck = await Deck.findById(deckId).populate('cards')
@@ -219,19 +228,17 @@ router.get('/deck/:deckId', async (req: any, res) => {
       cards: sessionQuestions,
     })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to create review session', { error: err })
     res.status(500).json({ error: 'Failed to create review session' })
   }
 })
 
-router.post('/', async (req: any, res) => {
+router.post('/', validate(submitReviewSchema), async (req: any, res) => {
   try {
-    const userId = req.user.id
+    const userId = (req.user as IUser)._id
     const { cardId, rating } = req.body
 
-    if (!cardId || !rating) {
-      return res.status(400).json({ error: 'cardId and rating are required' })
-    }
+    // Validation already done by middleware
 
     let currentProgress = await UserCardProgress.findOne({ userId, cardId })
 
@@ -264,7 +271,7 @@ router.post('/', async (req: any, res) => {
 
     res.status(200).json({ message: 'Progress updated successfully' })
   } catch (err) {
-    console.error(err)
+    logger.error('Failed to update progress', { error: err })
     res.status(500).json({ error: 'Failed to update progress' })
   }
 })

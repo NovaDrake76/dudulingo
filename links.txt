@@ -1,0 +1,13 @@
+LINKS
+
+Repositório:
+https://github.com/NovaDrake76/dudulingo/
+
+Vídeo:
+https://drive.google.com/file/d/159njhkfLIwICPnXapD_95fGf3oFuU-3C/view?usp=sharing
+
+OBS:
+O backend e frontend, cada um tem sua própria pasta docs, separamos a documentação deles.
+backend/docs
+frontend/docs
+

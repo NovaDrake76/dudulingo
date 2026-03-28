@@ -1,2 +1,6 @@
 node_modules/
 html/
+logs/
+.env
+.env.local
+dist/

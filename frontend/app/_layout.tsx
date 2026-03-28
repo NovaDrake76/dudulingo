@@ -13,20 +13,25 @@ import React, {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import "react-native-reanimated";
+import Toast from "react-native-toast-message";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ErrorBoundary } from "../components/ErrorBoundary";
+import { toastConfig } from "../components/ToastConfig";
 import { api } from "../services/api";
 import { getToken, logout } from "../services/auth";
 import i18n, { getLocale } from "../services/i18n";
+import logger from "../services/logger";
 
-// We expand the context to include a function to handle the session
 const AuthContext = createContext<{
   isAuthenticated: boolean;
+  loading: boolean;
   setToken: (token: string | null) => Promise<void>;
-  handleUserSession: () => Promise<void>; // New function to handle redirects
+  handleUserSession: () => Promise<void>;
 } | null>(null);
 
 export function useAuth() {
@@ -37,24 +42,23 @@ export function useAuth() {
   return context;
 }
 
-
-function useProtectedRoute(isAuthenticated: boolean) {
+function useProtectedRoute(isAuthenticated: boolean, loading: boolean) {
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
-    // useSegments always returns at least one segment, so we can read segments[0] directly.
+    if (loading) return;
     const inAuthGroup = segments[0] === "auth";
 
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/auth/sign-in");
     }
-  }, [isAuthenticated, segments, router]);
+  }, [isAuthenticated, loading, segments, router]);
 }
 
 function RootLayoutNav() {
-  const { isAuthenticated } = useAuth();
-  useProtectedRoute(isAuthenticated);
+  const { isAuthenticated, loading } = useAuth();
+  useProtectedRoute(isAuthenticated, loading);
 
   return (
     <Stack screenOptions={{ headerTransparent: false, headerBlurEffect: undefined }}>
@@ -68,8 +72,15 @@ function RootLayoutNav() {
         options={{ title: i18n.t("selectDeckTitle") }}
       />
       <Stack.Screen name="review/[deckId]" options={{ title: "Review" }} />
+      <Stack.Screen
+        name="add-card"
+        options={{ title: i18n.t("createCard") }}
+      />
+      <Stack.Screen
+        name="create-deck"
+        options={{ title: i18n.t("createDeck") }}
+      />
       <Stack.Screen name="auth/sign-in" options={{ headerShown: false }} />
-      {/* The callback screen is now handled cleanly */}
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
   );
@@ -78,9 +89,10 @@ function RootLayoutNav() {
 export default function RootLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const navigatingRef = useRef(false);
+  const setupRan = useRef(false);
   const colorScheme = useColorScheme();
   const router = useRouter();
-  const setupRan = React.useRef(false);
 
   const setToken = async (token: string | null) => {
     if (token) {
@@ -92,8 +104,9 @@ export default function RootLayout() {
     }
   };
 
-  // This is the centralized logic to decide where an authenticated user should go.
   const handleUserSession = async () => {
+    if (navigatingRef.current) return;
+    navigatingRef.current = true;
     try {
       const user = await api.getMe();
       if (user && user.selectedLanguage) {
@@ -102,9 +115,12 @@ export default function RootLayout() {
         router.replace("/auth/select-language");
       }
     } catch (error) {
-      console.error("Failed to fetch user data, logging out:", error);
-      await logout();
-      setIsAuthenticated(false);
+      logger.error("Failed to fetch user data, logging out", { error: String(error) });
+      await setToken(null);
+      router.replace("/auth/sign-in");
+    } finally {
+      // Reset after a short delay to allow navigation to settle
+      setTimeout(() => { navigatingRef.current = false; }, 1000);
     }
   };
 
@@ -122,11 +138,12 @@ export default function RootLayout() {
         if (token) {
           setIsAuthenticated(true);
           await handleUserSession();
+        } else {
+          setIsAuthenticated(false);
         }
       } catch (e) {
-        console.error("Error setting up root layout:", e);
-        await logout();
-        setIsAuthenticated(false);
+        logger.error("Error setting up root layout", { error: String(e) });
+        await setToken(null);
       } finally {
         setLoading(false);
         await SplashScreen.hideAsync();
@@ -136,15 +153,18 @@ export default function RootLayout() {
   }, []);
 
   if (loading) {
-    return null; 
+    return null;
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, setToken, handleUserSession }}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <RootLayoutNav />
-        <StatusBar style="auto" />
-      </ThemeProvider>
-    </AuthContext.Provider>
+    <ErrorBoundary>
+      <AuthContext.Provider value={{ isAuthenticated, loading, setToken, handleUserSession }}>
+        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+          <RootLayoutNav />
+          <StatusBar style="auto" />
+          <Toast config={toastConfig} />
+        </ThemeProvider>
+      </AuthContext.Provider>
+    </ErrorBoundary>
   );
 }

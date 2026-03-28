@@ -3,10 +3,12 @@ import { Router } from 'express'
 import jwt from 'jsonwebtoken'
 import passport from 'passport'
 import { User } from '../db/schema.ts'
+import logger from '../logger.ts'
+import { authLimiter } from '../middleware/rateLimiter.ts'
 
 const router = Router()
 
-router.get('/google', (req, res, next) => {
+router.get('/google', authLimiter, (req, res, next) => {
   const state = req.query.state as string | undefined
   if (!state) {
     return res.status(400).send('State parameter is missing')
@@ -21,6 +23,7 @@ router.get('/google', (req, res, next) => {
 
 router.get(
   '/google/callback',
+  authLimiter,
   passport.authenticate('google', { session: false, failureRedirect: '/auth/failure' }),
   async (req, res) => {
     try {
@@ -47,7 +50,7 @@ router.get(
       const state = req.query.state as string | undefined
 
       if (!state) {
-        console.error('State parameter missing from Google OAuth callback')
+        logger.error('State parameter missing from Google OAuth callback')
         return res.redirect(`dudulingo://auth/callback?error=missing_state`)
       }
 
@@ -56,7 +59,7 @@ router.get(
 
       res.redirect(finalRedirectUrl)
     } catch (error) {
-      console.error('Error in Google callback:', error)
+      logger.error('Error in Google callback', { error })
       const state = req.query.state as string | undefined
       if (state) {
         const decodedState = JSON.parse(Buffer.from(state, 'base64').toString('ascii'))

@@ -3,6 +3,7 @@ import { Buffer } from "buffer";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
+import logger from "./logger";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -41,7 +42,7 @@ export const loginWithGoogle = async () => {
 
     return { success: true };
   } catch (error) {
-    console.error("Google login error:", error);
+    logger.error("Google login error", { error: String(error) });
     return { success: false, error: "An unexpected error occurred." };
   }
 };

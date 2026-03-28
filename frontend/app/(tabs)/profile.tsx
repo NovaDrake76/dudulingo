@@ -1,8 +1,10 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppColors } from '../../constants/theme';
 import { api } from '../../services/api';
 import i18n, { setLocale } from '../../services/i18n';
+import logger from '../../services/logger';
 import { useAuth } from '../_layout';
 
 type User = {
@@ -18,14 +20,13 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [locale, setLocaleState] = useState(i18n.locale);
 
-  // Fetches user data when the screen is focused
   const loadUserData = useCallback(async () => {
     try {
       setLoading(true);
       const userData = await api.getMe();
       setUser(userData);
     } catch (error) {
-      console.error('Failed to load user data:', error);
+      logger.error('Failed to load user data', { error: String(error) });
     } finally {
       setLoading(false);
     }
@@ -46,18 +47,17 @@ export default function Profile() {
     setLocale(newLocale);
     setLocaleState(newLocale);
   };
-  
+
   const getLanguageName = (code?: string) => {
     if (code === 'en') return 'English';
     if (code === 'pt-BR') return 'Português';
     return 'Not set';
   };
 
-
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#58cc02" />
+        <ActivityIndicator size="large" color={AppColors.primary} />
       </View>
     );
   }
@@ -72,7 +72,6 @@ export default function Profile() {
       </View>
     );
   }
-
 
   return (
     <View style={styles.container}>
@@ -117,14 +116,14 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
+    backgroundColor: AppColors.background,
     alignItems: 'center',
     paddingTop: 80,
     paddingHorizontal: 20,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#0e0e0e',
+    backgroundColor: AppColors.background,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -138,20 +137,20 @@ const styles = StyleSheet.create({
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: '#1f1f1f',
+    backgroundColor: AppColors.surface,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   avatarPlaceholderText: {
-    color: '#fff',
+    color: AppColors.text,
     fontSize: 48,
     fontWeight: 'bold',
   },
   name: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
+    color: AppColors.text,
     marginBottom: 48,
   },
   section: {
@@ -161,7 +160,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    color: '#aaa',
+    color: AppColors.textMuted,
     marginBottom: 12,
   },
   languageSelector: {
@@ -169,37 +168,37 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   language: {
-    color: '#ccc',
+    color: AppColors.textSubtle,
     fontSize: 18,
     marginHorizontal: 15,
   },
   activeLanguage: {
-    color: '#58cc02',
+    color: AppColors.primary,
     fontSize: 18,
     fontWeight: 'bold',
     marginHorizontal: 15,
   },
   currentLearningLanguage: {
-    color: '#fff',
+    color: AppColors.text,
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
   },
   secondaryButton: {
-    backgroundColor: '#1f1f1f',
+    backgroundColor: AppColors.surface,
     borderRadius: 12,
     paddingVertical: 12,
     paddingHorizontal: 32,
     borderWidth: 1,
-    borderColor: '#58cc02',
+    borderColor: AppColors.primary,
   },
   secondaryButtonText: {
-    color: '#58cc02',
+    color: AppColors.primary,
     fontSize: 16,
     fontWeight: 'bold',
   },
   button: {
-    backgroundColor: '#EA4335',
+    backgroundColor: AppColors.danger,
     paddingVertical: 16,
     paddingHorizontal: 32,
     borderRadius: 14,
@@ -207,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   buttonText: {
-    color: '#fff',
+    color: AppColors.text,
     fontSize: 18,
     fontWeight: 'bold',
   },
