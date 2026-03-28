@@ -7,7 +7,6 @@ import logger from '../logger.ts'
 import { reviewLimiter } from '../middleware/rateLimiter.ts'
 import { validate } from '../middleware/validation.ts'
 import { deckIdParamSchema, submitReviewSchema } from '../schemas/review.schema.ts'
-import { generateSpeechUrl } from '../services/tts.ts'
 import { calculateSrs } from '../srs.ts'
 
 const router = Router()
@@ -105,18 +104,9 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
       break
   }
 
-  // Generate audio URL if not already present
-  let audioUrl = card.audioUrl
-  if (!audioUrl && card.answer) {
-    audioUrl = (await generateSpeechUrl(card.answer, card.lang)) || undefined
-    // Update card with generated audio URL for future use
-    if (audioUrl) {
-      await Card.findByIdAndUpdate(card._id, { audioUrl })
-    }
-  }
-
-  if (audioUrl) {
-    questionData.audioUrl = audioUrl
+  // Use existing audio URL (no on-the-fly generation to avoid waste)
+  if (card.audioUrl) {
+    questionData.audioUrl = card.audioUrl
   }
 
   // this is the "correct answer" data for the flip-card feedback
@@ -124,7 +114,7 @@ const createQuestionData = async (card: ICard, userProgress: Partial<IUserCardPr
     word: card.answer,
     translation: card.prompt,
     imageUrl: card.imageUrl,
-    audioUrl: audioUrl,
+    audioUrl: card.audioUrl,
   }
 
   return questionData

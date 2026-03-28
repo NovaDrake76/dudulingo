@@ -21,7 +21,8 @@
     "db:studio": "drizzle-kit studio",
     "db:migrate": "tsx scripts/run-migration.ts",
     "deck:make": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts",
-    "deck:seed": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts --seed"
+    "deck:seed": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts --seed",
+    "audio:backfill": "node --env-file=.env --import tsx/esm scripts/backfill-audio.ts"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.0",
