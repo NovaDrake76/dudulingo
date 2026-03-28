@@ -37,6 +37,13 @@ export default function SignIn() {
     const stateBase64 = btoa(stateData);
     const apiUrl = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8000';
     const googleAuthUrl = apiUrl + '/auth/google?state=' + encodeURIComponent(stateBase64);
+
+    // DEBUG: Log the URLs being used
+    console.log('🔍 DEBUG OAuth URLs:');
+    console.log('API URL:', apiUrl);
+    console.log('Google Auth URL:', googleAuthUrl);
+    console.log('Redirect URI:', redirectUri);
+
     if (typeof window !== 'undefined') {
       window.location.href = googleAuthUrl;
     } else {
