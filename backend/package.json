@@ -22,10 +22,12 @@
     "db:migrate": "tsx scripts/run-migration.ts",
     "deck:make": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts",
     "deck:seed": "node --env-file=.env --import tsx/esm scripts/deck-maker.ts --seed",
-    "audio:backfill": "node --env-file=.env --import tsx/esm scripts/backfill-audio.ts"
+    "audio:backfill": "node --env-file=.env --import tsx/esm scripts/backfill-audio.ts",
+    "pack:build": "node --import tsx/esm scripts/pack-builder.ts"
   },
   "dependencies": {
     "@google-cloud/text-to-speech": "^6.4.0",
+    "archiver": "^7.0.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
@@ -42,6 +44,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",
     "@eslint/js": "^9.36.0",
+    "@types/archiver": "^7.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
     "@types/jsonwebtoken": "^9.0.10",

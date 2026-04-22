@@ -53,7 +53,7 @@ export default function Learn() {
   );
 
   const handleStartReview = () => {
-    router.push('../review/general');
+    router.push('/select-deck');
   };
 
   if (loading) {
@@ -119,39 +119,15 @@ export default function Learn() {
 
       {/* Actions */}
       <Animated.View entering={FadeInDown.delay(400)} style={styles.actions}>
-        {stats && stats.totalWords > 0 && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.primaryButton,
-              pressed && styles.primaryButtonPressed,
-            ]}
-            onPress={handleStartReview}
-          >
-            <Ionicons name="play" size={22} color={AppColors.white} />
-            <Text style={styles.primaryButtonText}>{i18n.t('startReview')}</Text>
-          </Pressable>
-        )}
-
         <Pressable
           style={({ pressed }) => [
-            styles.secondaryButton,
-            pressed && styles.secondaryButtonPressed,
+            styles.primaryButton,
+            pressed && styles.primaryButtonPressed,
           ]}
-          onPress={() => router.push('/select-deck')}
+          onPress={handleStartReview}
         >
-          <Ionicons name="albums-outline" size={20} color={AppColors.primary} />
-          <Text style={styles.secondaryButtonText}>{i18n.t('addNewDeck')}</Text>
-        </Pressable>
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.tertiaryButton,
-            pressed && styles.tertiaryButtonPressed,
-          ]}
-          onPress={() => router.push('/add-card')}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={AppColors.textMuted} />
-          <Text style={styles.tertiaryButtonText}>{i18n.t('addCard')}</Text>
+          <Ionicons name="play" size={22} color={AppColors.white} />
+          <Text style={styles.primaryButtonText}>Browse decks</Text>
         </Pressable>
       </Animated.View>
 

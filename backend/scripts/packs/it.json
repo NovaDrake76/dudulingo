@@ -1,0 +1,44 @@
+{
+  "lang": "it",
+  "version": 1,
+  "name": "Italiano",
+  "description": "Vocabolario italiano per lusofoni.",
+  "decks": [
+    {
+      "id": "it-v1-deck-animals",
+      "name": "Animali",
+      "description": "Dodici animali comuni in italiano.",
+      "cards": [
+        { "prompt": "Cachorro", "answer": "Cane",     "search": "dog",      "audio": true },
+        { "prompt": "Gato",     "answer": "Gatto",    "search": "cat",      "audio": true },
+        { "prompt": "Le\u00e3o","answer": "Leone",    "search": "lion",     "audio": true },
+        { "prompt": "Tigre",    "answer": "Tigre",    "search": "tiger",    "audio": true },
+        { "prompt": "Elefante", "answer": "Elefante", "search": "elephant", "audio": true },
+        { "prompt": "Macaco",   "answer": "Scimmia",  "search": "monkey",   "audio": true },
+        { "prompt": "Girafa",   "answer": "Giraffa",  "search": "giraffe",  "audio": true },
+        { "prompt": "Zebra",    "answer": "Zebra",    "search": "zebra",    "audio": true },
+        { "prompt": "Urso",     "answer": "Orso",     "search": "bear",     "audio": true },
+        { "prompt": "P\u00e1ssaro","answer": "Uccello","search": "bird",    "audio": true },
+        { "prompt": "Peixe",    "answer": "Pesce",    "search": "fish",     "audio": true },
+        { "prompt": "Cavalo",   "answer": "Cavallo",  "search": "horse",    "audio": true }
+      ]
+    },
+    {
+      "id": "it-v1-deck-common40",
+      "name": "40 Parole Pi\u00f9 Comuni",
+      "description": "Le 40 parole pi\u00f9 utilizzate.",
+      "cards": [
+        { "prompt": "o, a, os, as",  "answer": "il, la, lo", "audio": false },
+        { "prompt": "ser, estar",    "answer": "essere",     "audio": true },
+        { "prompt": "para, a",       "answer": "a, per",     "audio": false },
+        { "prompt": "de",            "answer": "di",         "audio": true },
+        { "prompt": "e",             "answer": "e",          "audio": true },
+        { "prompt": "um, uma",       "answer": "un, una",    "audio": false },
+        { "prompt": "em, no, na",    "answer": "in",         "audio": true },
+        { "prompt": "que",           "answer": "che",        "audio": true },
+        { "prompt": "ter",           "answer": "avere",      "audio": true },
+        { "prompt": "eu",            "answer": "io",         "audio": true }
+      ]
+    }
+  ]
+}

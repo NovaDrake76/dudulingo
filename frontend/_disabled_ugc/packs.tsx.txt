@@ -1,0 +1,374 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { AppColors } from "../../constants/theme";
+import { listInstalledPacks } from "../../services/db/queries";
+import type { PackVersionRow } from "../../services/db/types";
+import logger from "../../services/logger";
+import {
+  installPack,
+  uninstallPack,
+  type InstallProgress,
+} from "../../services/packs/installer";
+import {
+  fetchManifest,
+  type PackManifestEntry,
+} from "../../services/packs/manifest";
+
+type Row = {
+  lang: string;
+  name: string;
+  available?: PackManifestEntry;
+  installed?: PackVersionRow;
+};
+
+const LANGUAGE_LABEL: Record<string, string> = {
+  en: "English",
+  it: "Italiano",
+  de: "Deutsch",
+  "pt-BR": "Português (BR)",
+};
+
+const prettyName = (lang: string, fallback?: string) =>
+  LANGUAGE_LABEL[lang] ?? fallback ?? lang.toUpperCase();
+
+const formatBytes = (bytes?: number) => {
+  if (!bytes) return "—";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+};
+
+export default function Packs() {
+  const [rows, setRows] = useState<Row[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [manifestError, setManifestError] = useState<string | null>(null);
+  const [busyLang, setBusyLang] = useState<string | null>(null);
+  const [progress, setProgress] = useState<InstallProgress | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setManifestError(null);
+    try {
+      const installed = await listInstalledPacks();
+      let available: PackManifestEntry[] = [];
+      try {
+        const manifest = await fetchManifest();
+        available = manifest.packs;
+      } catch (err) {
+        setManifestError(
+          "Can't reach the pack catalog — showing installed languages only.",
+        );
+        logger.debug(`Manifest fetch failed: ${String(err)}`);
+      }
+
+      const langs = new Set<string>([
+        ...installed.map((p) => p.lang),
+        ...available.map((p) => p.lang),
+      ]);
+      const merged: Row[] = Array.from(langs).map((lang) => {
+        const avail = available.find((a) => a.lang === lang);
+        const inst = installed.find((i) => i.lang === lang);
+        return {
+          lang,
+          name: prettyName(lang, avail?.name),
+          available: avail,
+          installed: inst,
+        };
+      });
+      merged.sort((a, b) => a.name.localeCompare(b.name));
+      setRows(merged);
+    } catch (err) {
+      logger.error("Failed to load pack list", { error: String(err) });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
+
+  const handleInstall = async (row: Row) => {
+    if (!row.available) return;
+    setBusyLang(row.lang);
+    setProgress({ phase: "downloading", bytesWritten: 0 });
+    try {
+      await installPack(row.available, {
+        onProgress: (p) => setProgress(p),
+      });
+      Alert.alert(
+        "Installed",
+        `${row.name} is now available. Pick it as your learning language in Profile.`,
+      );
+      await load();
+    } catch (err) {
+      logger.error("Pack install failed", { error: String(err) });
+      Alert.alert("Install failed", String(err));
+    } finally {
+      setBusyLang(null);
+      setProgress(null);
+    }
+  };
+
+  const handleUninstall = (row: Row) => {
+    if (!row.installed) return;
+    Alert.alert(
+      "Remove pack?",
+      `Cards and decks for ${row.name} will be deleted. Your review progress for those cards will remain but will be hidden until the pack is reinstalled.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            setBusyLang(row.lang);
+            try {
+              await uninstallPack(row.lang);
+              await load();
+            } catch (err) {
+              logger.error("Pack uninstall failed", { error: String(err) });
+              Alert.alert("Uninstall failed", String(err));
+            } finally {
+              setBusyLang(null);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={AppColors.primary} />
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <Text style={styles.title}>Language packs</Text>
+      <Text style={styles.subtitle}>
+        Download languages you want to learn. They stay on your device and work
+        offline.
+      </Text>
+
+      {manifestError ? (
+        <View style={styles.banner}>
+          <Text style={styles.bannerText}>{manifestError}</Text>
+        </View>
+      ) : null}
+
+      <View style={styles.list}>
+        {rows.length === 0 ? (
+          <Text style={styles.emptyText}>
+            No packs available yet. Check your internet connection.
+          </Text>
+        ) : (
+          rows.map((row) => {
+            const installed = !!row.installed;
+            const upgradeAvailable =
+              installed &&
+              row.available &&
+              row.available.version > row.installed!.active_version;
+            const busy = busyLang === row.lang;
+
+            return (
+              <View key={row.lang} style={styles.card}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.langName}>{row.name}</Text>
+                  {installed ? (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>
+                        v{row.installed!.active_version} installed
+                      </Text>
+                    </View>
+                  ) : null}
+                </View>
+                {row.available ? (
+                  <Text style={styles.meta}>
+                    Latest v{row.available.version} · {formatBytes(row.available.sizeBytes)}
+                  </Text>
+                ) : (
+                  <Text style={styles.meta}>Bundled with the app</Text>
+                )}
+                {row.available?.description ? (
+                  <Text style={styles.description}>{row.available.description}</Text>
+                ) : null}
+
+                {busy && progress ? (
+                  <View style={styles.progressRow}>
+                    <ActivityIndicator color={AppColors.primary} />
+                    <Text style={styles.progressText}>
+                      {progress.phase}
+                      {progress.bytesTotal
+                        ? ` · ${formatBytes(progress.bytesWritten)} / ${formatBytes(progress.bytesTotal)}`
+                        : ""}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.actions}>
+                    {!installed && row.available ? (
+                      <Pressable
+                        style={styles.primaryButton}
+                        onPress={() => handleInstall(row)}
+                      >
+                        <Ionicons
+                          name="download-outline"
+                          size={18}
+                          color={AppColors.white}
+                        />
+                        <Text style={styles.primaryButtonText}>Install</Text>
+                      </Pressable>
+                    ) : null}
+
+                    {upgradeAvailable ? (
+                      <Pressable
+                        style={styles.primaryButton}
+                        onPress={() => handleInstall(row)}
+                      >
+                        <Ionicons
+                          name="refresh"
+                          size={18}
+                          color={AppColors.white}
+                        />
+                        <Text style={styles.primaryButtonText}>Update</Text>
+                      </Pressable>
+                    ) : null}
+
+                    {installed ? (
+                      <Pressable
+                        style={styles.destructiveButton}
+                        onPress={() => handleUninstall(row)}
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={18}
+                          color={AppColors.danger}
+                        />
+                        <Text style={styles.destructiveButtonText}>Remove</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                )}
+              </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: AppColors.background },
+  scrollContent: { paddingTop: 70, paddingHorizontal: 20, paddingBottom: 100 },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: AppColors.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: AppColors.text,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 15,
+    color: AppColors.textMuted,
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  banner: {
+    backgroundColor: AppColors.surface,
+    borderLeftWidth: 3,
+    borderLeftColor: AppColors.info,
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  bannerText: { color: AppColors.textMuted, fontSize: 13 },
+  list: { gap: 12 },
+  emptyText: {
+    color: AppColors.textMuted,
+    fontSize: 14,
+    textAlign: "center",
+    paddingTop: 40,
+  },
+  card: {
+    backgroundColor: AppColors.surface,
+    borderRadius: 16,
+    padding: 16,
+    gap: 6,
+  },
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  langName: { color: AppColors.text, fontSize: 18, fontWeight: "700" },
+  badge: {
+    backgroundColor: AppColors.surfaceElevated,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  badgeText: { color: AppColors.textMuted, fontSize: 11, fontWeight: "600" },
+  meta: { color: AppColors.textMuted, fontSize: 12 },
+  description: { color: AppColors.textSubtle, fontSize: 13, lineHeight: 18 },
+  actions: { flexDirection: "row", gap: 8, marginTop: 10 },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: AppColors.primary,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    gap: 6,
+  },
+  primaryButtonText: {
+    color: AppColors.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  destructiveButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: AppColors.danger,
+    gap: 6,
+  },
+  destructiveButtonText: {
+    color: AppColors.danger,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  progressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 10,
+    gap: 10,
+  },
+  progressText: { color: AppColors.textMuted, fontSize: 13 },
+});

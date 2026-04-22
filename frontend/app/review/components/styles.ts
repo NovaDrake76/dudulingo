@@ -85,6 +85,19 @@ export const styles = StyleSheet.create({
     color: AppColors.text,
     marginBottom: 10,
   },
+  questionPrompt: {
+    color: AppColors.textSecondary,
+    fontSize: 20,
+    fontWeight: "600",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  wordRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
   optionsContainer: {
     flexDirection: "row",
     flexWrap: "wrap",

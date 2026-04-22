@@ -27,6 +27,39 @@ jest.mock('@/services/i18n', () => ({
 
 jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock'));
 
+jest.mock('expo-audio', () => ({
+  createAudioPlayer: jest.fn(() => ({
+    play: jest.fn(),
+    remove: jest.fn(),
+    addListener: jest.fn(() => ({ remove: jest.fn() })),
+  })),
+}));
+
+jest.mock('fflate', () => ({
+  unzipSync: jest.fn(() => ({})),
+}));
+
+jest.mock('expo-file-system/legacy', () => ({
+  documentDirectory: 'file:///docs/',
+  cacheDirectory: 'file:///cache/',
+  getInfoAsync: jest.fn().mockResolvedValue({ exists: false }),
+  makeDirectoryAsync: jest.fn(),
+  deleteAsync: jest.fn(),
+  moveAsync: jest.fn(),
+  createDownloadResumable: jest.fn(() => ({
+    downloadAsync: jest.fn().mockResolvedValue({ uri: 'file:///cache/x.zip' }),
+  })),
+  readAsStringAsync: jest.fn(),
+}));
+
+jest.mock('@/services/packs/installer', () => ({
+  beginReviewSession: jest.fn(),
+  endReviewSession: jest.fn(),
+  isReviewInProgress: jest.fn(),
+  installPack: jest.fn(),
+  uninstallPack: jest.fn(),
+}));
+
 jest.spyOn(Alert, 'alert');
 
 describe('ReviewScreen Integration', () => {

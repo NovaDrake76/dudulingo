@@ -1,7 +1,7 @@
 import { Text, View } from 'react-native';
 import { AudioButton } from '../../../components/AudioButton';
 import i18n from '../../../services/i18n';
-import { CardImage } from './CardImage';
+import { CardVisual } from './CardVisual';
 import { styles } from './styles';
 
 type Props = {
@@ -9,18 +9,29 @@ type Props = {
     word: string;
     translation: string;
     imageUrl?: string;
+    imageKey?: string;
     audioUrl?: string;
+    emoji?: string;
+    lang?: string;
   };
 };
 
 export function FeedbackDisplay({ feedback }: Props) {
+  const hasVisual = !!feedback.imageKey || !!feedback.imageUrl || !!feedback.emoji;
   return (
     <View style={styles.feedbackCard}>
       <Text style={styles.feedbackTitle}>{i18n.t('correctAnswer')}</Text>
-      {feedback.imageUrl && <CardImage uri={feedback.imageUrl} style={styles.feedbackImage} />}
+      {hasVisual && (
+        <CardVisual
+          imageKey={feedback.imageKey}
+          imageUrl={feedback.imageUrl}
+          emoji={feedback.emoji}
+          style={styles.feedbackImage}
+        />
+      )}
       <Text style={styles.feedbackWord}>{feedback.word}</Text>
       <Text style={styles.feedbackTranslation}>{feedback.translation}</Text>
-      {feedback.audioUrl && <AudioButton audioUrl={feedback.audioUrl} />}
+      <AudioButton text={feedback.word} lang={feedback.lang} />
     </View>
   );
 }

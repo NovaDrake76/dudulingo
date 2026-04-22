@@ -1,67 +1,32 @@
 import "react-native-gesture-handler";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   DarkTheme,
   DefaultTheme,
   ThemeProvider,
 } from "@react-navigation/native";
-import { Stack, useRouter, useSegments } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import "react-native-reanimated";
 import Toast from "react-native-toast-message";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { ErrorBoundary } from "../components/ErrorBoundary";
 import { toastConfig } from "../components/ToastConfig";
-import { api } from "../services/api";
-import { getToken, logout } from "../services/auth";
+import { AppColors } from "../constants/theme";
+import { bootstrap } from "../services/bootstrap";
 import i18n, { getLocale } from "../services/i18n";
 import logger from "../services/logger";
 
-const AuthContext = createContext<{
-  isAuthenticated: boolean;
-  loading: boolean;
-  setToken: (token: string | null) => Promise<void>;
-  handleUserSession: () => Promise<void>;
-} | null>(null);
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-}
-
-function useProtectedRoute(isAuthenticated: boolean, loading: boolean) {
-  const segments = useSegments();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (loading) return;
-    const inAuthGroup = segments[0] === "auth";
-
-    if (!isAuthenticated && !inAuthGroup) {
-      router.replace("/auth/sign-in");
-    }
-  }, [isAuthenticated, loading, segments, router]);
-}
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootLayoutNav() {
-  const { isAuthenticated, loading } = useAuth();
-  useProtectedRoute(isAuthenticated, loading);
-
   return (
     <Stack screenOptions={{ headerTransparent: false }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="auth/select-language"
@@ -72,99 +37,81 @@ function RootLayoutNav() {
         options={{ title: i18n.t("selectDeckTitle") }}
       />
       <Stack.Screen name="review/[deckId]" options={{ title: "Review" }} />
-      <Stack.Screen
-        name="add-card"
-        options={{ title: i18n.t("createCard") }}
-      />
-      <Stack.Screen
-        name="create-deck"
-        options={{ title: i18n.t("createDeck") }}
-      />
-      <Stack.Screen name="auth/sign-in" options={{ headerShown: false }} />
-      <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
     </Stack>
   );
 }
 
 export default function RootLayout() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const navigatingRef = useRef(false);
+  const [ready, setReady] = useState(false);
+  const [bootError, setBootError] = useState<string | null>(null);
   const setupRan = useRef(false);
   const colorScheme = useColorScheme();
-  const router = useRouter();
-
-  const setToken = async (token: string | null) => {
-    if (token) {
-      await AsyncStorage.setItem("authToken", token);
-      setIsAuthenticated(true);
-    } else {
-      await logout();
-      setIsAuthenticated(false);
-    }
-  };
-
-  const handleUserSession = async () => {
-    if (navigatingRef.current) return;
-    navigatingRef.current = true;
-    try {
-      const user = await api.getMe();
-      if (user && user.selectedLanguage) {
-        router.replace("/(tabs)/learn");
-      } else {
-        router.replace("/auth/select-language");
-      }
-    } catch (error) {
-      logger.error("Failed to fetch user data, logging out", { error: String(error) });
-      await setToken(null);
-      router.replace("/auth/sign-in");
-    } finally {
-      // Reset after a short delay to allow navigation to settle
-      setTimeout(() => { navigatingRef.current = false; }, 1000);
-    }
-  };
 
   useEffect(() => {
     if (setupRan.current) return;
     setupRan.current = true;
 
-    async function setup() {
-      SplashScreen.preventAutoHideAsync();
+    (async () => {
       try {
-        const locale = await getLocale();
-        i18n.locale = locale;
-
-        const token = await getToken();
-        if (token) {
-          setIsAuthenticated(true);
-          await handleUserSession();
-        } else {
-          setIsAuthenticated(false);
-        }
+        i18n.locale = await getLocale();
+        await bootstrap();
       } catch (e) {
-        logger.error("Error setting up root layout", { error: String(e) });
-        await setToken(null);
+        const msg = e instanceof Error ? e.message : String(e);
+        logger.error("Bootstrap failed", { error: msg });
+        setBootError(msg);
       } finally {
-        setLoading(false);
-        await SplashScreen.hideAsync();
+        setReady(true);
+        SplashScreen.hideAsync().catch(() => {});
       }
-    }
-    setup();
+    })();
   }, []);
 
-  if (loading) {
-    return null;
+  if (!ready) {
+    return (
+      <View style={styles.splash}>
+        <ActivityIndicator size="large" color={AppColors.primary} />
+      </View>
+    );
+  }
+
+  if (bootError) {
+    return (
+      <View style={styles.splash}>
+        <Text style={styles.errorTitle}>Startup failed</Text>
+        <Text style={styles.errorBody}>{bootError}</Text>
+      </View>
+    );
   }
 
   return (
     <ErrorBoundary>
-      <AuthContext.Provider value={{ isAuthenticated, loading, setToken, handleUserSession }}>
-        <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-          <RootLayoutNav />
-          <StatusBar style="auto" />
-          <Toast config={toastConfig} />
-        </ThemeProvider>
-      </AuthContext.Provider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <RootLayoutNav />
+        <StatusBar style="auto" />
+        <Toast config={toastConfig} />
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
+
+const styles = StyleSheet.create({
+  splash: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: AppColors.background,
+  },
+  errorTitle: {
+    color: AppColors.danger,
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  errorBody: {
+    color: AppColors.textMuted,
+    fontSize: 14,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+});

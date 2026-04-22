@@ -27,8 +27,7 @@ describe('LearnScreen Integration', () => {
     jest.clearAllMocks();
   });
 
-
-  it('navigates to general review when "Start Review" is pressed', async () => {
+  it('navigates to the deck picker when "Browse decks" is pressed', async () => {
     (api.getUserStats as jest.Mock).mockResolvedValue({
       totalWords: 10,
       masteredWords: 0,
@@ -37,39 +36,21 @@ describe('LearnScreen Integration', () => {
 
     const { findByText } = render(<LearnScreen />);
 
-    const startButton = await findByText('startReview');
-    fireEvent.press(startButton);
-
-    expect(router.push).toHaveBeenCalledWith('../review/general');
-  });
-
-  it('navigates to deck selection when "Add New Deck" is pressed', async () => {
-    (api.getUserStats as jest.Mock).mockResolvedValue({
-      totalWords: 10, 
-      masteredWords: 0,
-      learningWords: 10,
-    });
-
-    const { findByText } = render(<LearnScreen />);
-
-    const addButton = await findByText('addNewDeck');
-    fireEvent.press(addButton);
+    const browseButton = await findByText('Browse decks');
+    fireEvent.press(browseButton);
 
     expect(router.push).toHaveBeenCalledWith('/select-deck');
   });
 
-  it('shows empty state and hides review button when user has no words', async () => {
+  it('still shows the deck picker entry when the user has no progress yet', async () => {
     (api.getUserStats as jest.Mock).mockResolvedValue({
       totalWords: 0,
       masteredWords: 0,
       learningWords: 0,
     });
 
-    const { findByText, queryByText } = render(<LearnScreen />);
+    const { findByText } = render(<LearnScreen />);
 
-    expect(await findByText('noDecks')).toBeTruthy();
-    expect(await findByText('noDecksSubtitle')).toBeTruthy();
-
-    expect(queryByText('startReview')).toBeNull();
+    expect(await findByText('Browse decks')).toBeTruthy();
   });
 });

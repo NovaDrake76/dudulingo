@@ -1,21 +1,18 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 import { AppColors } from '../../constants/theme';
 import { api } from '../../services/api';
 import i18n, { setLocale } from '../../services/i18n';
 import logger from '../../services/logger';
-import { useAuth } from '../_layout';
 
 type User = {
   _id: string;
   name: string;
-  photoUrl?: string;
-  selectedLanguage?: string;
+  selectedLanguage?: string | null;
 };
 
 export default function Profile() {
-  const { setToken } = useAuth();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [locale, setLocaleState] = useState(i18n.locale);
@@ -38,9 +35,27 @@ export default function Profile() {
     }, [loadUserData])
   );
 
-  const handleLogout = async () => {
-    await setToken(null);
-    router.replace('/auth/sign-in');
+  const handleResetProgress = () => {
+    Alert.alert(
+      'Reset progress?',
+      'This will delete all your review progress. Installed language packs and cards stay. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.resetAllProgress();
+              Alert.alert('Done', 'Your progress has been reset.');
+            } catch (error) {
+              logger.error('Failed to reset progress', { error: String(error) });
+              Alert.alert('Error', 'Could not reset progress.');
+            }
+          },
+        },
+      ],
+    );
   };
 
   const changeLocale = (newLocale: string) => {
@@ -48,9 +63,11 @@ export default function Profile() {
     setLocaleState(newLocale);
   };
 
-  const getLanguageName = (code?: string) => {
+  const getLanguageName = (code?: string | null) => {
     if (code === 'en') return 'English';
     if (code === 'pt-BR') return 'Português';
+    if (code === 'it') return 'Italiano';
+    if (code === 'de') return 'Deutsch';
     return 'Not set';
   };
 
@@ -62,28 +79,12 @@ export default function Profile() {
     );
   }
 
-  if (!user) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.name}>Could not load user profile.</Text>
-        <Pressable style={styles.button} onPress={handleLogout}>
-          <Text style={styles.buttonText}>{i18n.t('logOut')}</Text>
-        </Pressable>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-
-      {user.photoUrl ? (
-        <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder}>
-          <Text style={styles.avatarPlaceholderText}>{user.name?.[0]}</Text>
-        </View>
-      )}
-      <Text style={styles.name}>{user.name}</Text>
+      <View style={styles.avatarPlaceholder}>
+        <Text style={styles.avatarPlaceholderText}>{user?.name?.[0] ?? 'L'}</Text>
+      </View>
+      <Text style={styles.name}>{user?.name ?? 'Learner'}</Text>
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>App Language</Text>
@@ -100,14 +101,19 @@ export default function Profile() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Learning Language</Text>
-        <Text style={styles.currentLearningLanguage}>{getLanguageName(user.selectedLanguage)}</Text>
-         <Pressable style={styles.secondaryButton} onPress={() => router.push('/auth/select-language')}>
-            <Text style={styles.secondaryButtonText}>Change</Text>
+        <Text style={styles.currentLearningLanguage}>
+          {getLanguageName(user?.selectedLanguage)}
+        </Text>
+        <Pressable
+          style={styles.secondaryButton}
+          onPress={() => router.push('/auth/select-language')}
+        >
+          <Text style={styles.secondaryButtonText}>Change</Text>
         </Pressable>
       </View>
 
-      <Pressable style={styles.button} onPress={handleLogout}>
-        <Text style={styles.buttonText}>{i18n.t('logOut')}</Text>
+      <Pressable style={styles.button} onPress={handleResetProgress}>
+        <Text style={styles.buttonText}>Reset progress</Text>
       </Pressable>
     </View>
   );
@@ -127,13 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 24,
-  },
-   avatarPlaceholder: {
+  avatarPlaceholder: {
     width: 120,
     height: 120,
     borderRadius: 60,

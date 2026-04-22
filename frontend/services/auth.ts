@@ -1,58 +1,20 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Buffer } from "buffer";
-import * as Linking from "expo-linking";
-import * as WebBrowser from "expo-web-browser";
-import { Platform } from "react-native";
-import logger from "./logger";
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-const redirectUri = Linking.createURL("auth/callback");
-
-WebBrowser.maybeCompleteAuthSession();
+/**
+ * Offline MVP: authentication is disabled. These exports are kept only to
+ * prevent legacy imports from crashing during the transition. Phase 4 will
+ * reintroduce a proper auth module for optional cloud sync.
+ */
 
 export const loginWithGoogle = async () => {
-  try {
-    let redirect: string;
-
-    if (Platform.OS === "web") {
-      redirect = `${window.location.origin}/auth/callback`;
-    } else {
-      redirect = redirectUri;
-    }
-
-    const state = Buffer.from(
-      JSON.stringify({ redirectUri: redirect }),
-    ).toString("base64");
-    const authUrl = `${API_URL}/auth/google?state=${encodeURIComponent(state)}`;
-
-    if (Platform.OS === "web") {
-      window.location.href = authUrl;
-      return { success: true };
-    }
-
-    const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
-
-    if (result.type !== "success") {
-      return {
-        success: false,
-        error: "Authentication was cancelled or failed.",
-      };
-    }
-
-    return { success: true };
-  } catch (error) {
-    logger.error("Google login error", { error: String(error) });
-    return { success: false, error: "An unexpected error occurred." };
-  }
+  return {
+    success: false,
+    error: "Login is not required in the offline app.",
+  };
 };
 
 export const getToken = async (): Promise<string | null> => {
-  return await AsyncStorage.getItem("authToken");
+  return null;
 };
 
 export const logout = async () => {
-  await AsyncStorage.removeItem("authToken");
-  await AsyncStorage.removeItem("selectedLanguage");
-  await AsyncStorage.removeItem("selectedDeck");
+  // no-op
 };

@@ -1,21 +1,36 @@
 import { Text, View } from 'react-native';
 import { AudioButton } from '../../../components/AudioButton';
-import { CardImage } from './CardImage';
+import { CardVisual } from './CardVisual';
 import { styles } from './styles';
 
 type Props = {
   prompt?: string;
   imageUrl?: string;
-  audioUrl?: string;
+  imageKey?: string;
+  emoji?: string;
   word?: string;
+  lang?: string;
 };
 
-export function QuestionDisplay({ prompt, imageUrl, audioUrl, word }: Props) {
+export function QuestionDisplay({ prompt, imageUrl, imageKey, emoji, word, lang }: Props) {
+  const hasVisual = !!imageKey || !!imageUrl || !!emoji;
   return (
     <View style={styles.questionContentContainer}>
-      {imageUrl && <CardImage uri={imageUrl} style={styles.questionImage} />}
-      {word && <Text style={styles.questionWord}>{word}</Text>}
-      {audioUrl && <AudioButton audioUrl={audioUrl} />}
+      {hasVisual && (
+        <CardVisual
+          imageKey={imageKey}
+          imageUrl={imageUrl}
+          emoji={emoji}
+          style={styles.questionImage}
+        />
+      )}
+      {prompt && <Text style={styles.questionPrompt}>{prompt}</Text>}
+      {word && (
+        <View style={styles.wordRow}>
+          <Text style={styles.questionWord}>{word}</Text>
+          <AudioButton text={word} lang={lang} />
+        </View>
+      )}
     </View>
   );
 }

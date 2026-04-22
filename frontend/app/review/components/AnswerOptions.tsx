@@ -1,8 +1,8 @@
 import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
-import { CardImage } from './CardImage';
+import { CardVisual } from './CardVisual';
 import { styles } from './styles';
 
-type Option = string | { text: string; imageUrl: string };
+type Option = string | { text: string; imageUrl?: string; emoji?: string; imageKey?: string };
 
 type Props = {
   options: Option[];
@@ -15,19 +15,29 @@ export function AnswerOptions({ options, showResult, getOptionStyle, handleSelec
   return (
     <View style={styles.optionsContainer}>
       {options.map((option, index) => {
-        const isImageOption = typeof option === 'object' && 'imageUrl' in option;
-        const optionText = isImageOption ? option.text : (option as string);
-        const optionImage = isImageOption ? option.imageUrl : null;
-        const displayLabel = isImageOption ? '' : optionText;
+        const isVisualOption = typeof option === 'object';
+        const optionText = isVisualOption ? option.text : (option as string);
+        const displayLabel = isVisualOption ? '' : optionText;
+        const imageUrl = isVisualOption ? option.imageUrl : undefined;
+        const imageKey = isVisualOption ? option.imageKey : undefined;
+        const emoji = isVisualOption ? option.emoji : undefined;
+        const hasVisual = !!imageUrl || !!imageKey || !!emoji;
 
         return (
           <Pressable
             key={index}
-            style={[styles.optionButton, getOptionStyle(optionText), isImageOption && styles.imageOptionButton]}
+            style={[styles.optionButton, getOptionStyle(optionText), hasVisual && styles.imageOptionButton]}
             onPress={() => handleSelectOption(optionText)}
             disabled={showResult}
           >
-            {optionImage && <CardImage uri={optionImage} style={styles.optionImage} />}
+            {hasVisual ? (
+              <CardVisual
+                imageKey={imageKey}
+                imageUrl={imageUrl}
+                emoji={emoji}
+                style={styles.optionImage}
+              />
+            ) : null}
             {displayLabel ? <Text style={styles.optionText}>{displayLabel}</Text> : null}
           </Pressable>
         );

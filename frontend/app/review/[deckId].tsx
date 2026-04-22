@@ -6,29 +6,14 @@ import { AppColors } from '../../constants/theme';
 import { api } from '../../services/api';
 import i18n from '../../services/i18n';
 import logger from '../../services/logger';
+import { beginReviewSession, endReviewSession } from '../../services/packs/installer';
+import type { QuestionData } from '../../services/review/questionGenerator';
 import { AnswerInput } from './components/AnswerInput';
 import { AnswerOptions } from './components/AnswerOptions';
 import { FeedbackDisplay } from './components/FeedbackDisplay';
 import { QuestionDisplay } from './components/QuestionDisplay';
 import { ReviewFooter } from './components/ReviewFooter';
 import { styles } from './components/styles';
-
-type QuestionData = {
-  cardId: string;
-  questionType: string;
-  correctAnswer: string;
-  imageUrl?: string;
-  audioUrl?: string;
-  word?: string;
-  prompt?: string;
-  options?: string[] | { text: string; imageUrl: string }[];
-  feedback: {
-    word: string;
-    translation: string;
-    imageUrl?: string;
-    audioUrl?: string;
-  };
-};
 
 export default function Review() {
   const { deckId } = useLocalSearchParams();
@@ -56,6 +41,7 @@ export default function Review() {
   useEffect(() => {
     const startSession = async () => {
       setLoading(true);
+      beginReviewSession();
       try {
         const sessionData =
           deckId === 'general'
@@ -79,6 +65,9 @@ export default function Review() {
       }
     };
     startSession();
+    return () => {
+      endReviewSession();
+    };
   }, [deckId]);
 
   const checkAnswer = (answer: string) => {
