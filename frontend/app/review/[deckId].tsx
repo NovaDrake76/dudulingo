@@ -1,8 +1,9 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { AppColors } from '../../constants/theme';
+import { ComponentProps, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Theme } from '../../constants/theme';
+import { currentStreak, windowSinceMs } from '../../services/activity';
 import { api } from '../../services/api';
 import i18n from '../../services/i18n';
 import logger from '../../services/logger';
@@ -13,7 +14,10 @@ import { AnswerOptions } from './components/AnswerOptions';
 import { FeedbackDisplay } from './components/FeedbackDisplay';
 import { QuestionDisplay } from './components/QuestionDisplay';
 import { ReviewFooter } from './components/ReviewFooter';
+import { SessionComplete } from './components/SessionComplete';
 import { styles } from './components/styles';
+
+type MissedEntry = { word: string; translation: string; miss: number };
 
 export default function Review() {
   const { deckId } = useLocalSearchParams();
@@ -24,25 +28,39 @@ export default function Review() {
   const [showResult, setShowResult] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [completed, setCompleted] = useState(false);
+  const [correctCount, setCorrectCount] = useState(0);
+  const [missedMap, setMissedMap] = useState<Map<string, MissedEntry>>(new Map());
+  const startTimeRef = useRef<number>(Date.now());
+  const endTimeRef = useRef<number | null>(null);
+  const [deckName, setDeckName] = useState<string | undefined>(undefined);
+  const preSessionStreakRef = useRef<number>(0);
 
-  const flipAnimation = useSharedValue(0);
   const currentQuestion = sessionCards[currentQuestionIndex];
-
-  const frontAnimatedStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipAnimation.value, [0, 1], [0, 180]);
-    return { transform: [{ rotateY: `${spin}deg` }] };
-  });
-
-  const backAnimatedStyle = useAnimatedStyle(() => {
-    const spin = interpolate(flipAnimation.value, [0, 1], [180, 360]);
-    return { transform: [{ rotateY: `${spin}deg` }] };
-  });
 
   useEffect(() => {
     const startSession = async () => {
       setLoading(true);
+      startTimeRef.current = Date.now();
       beginReviewSession();
       try {
+        // Snapshot the streak before we log any new events so we can tell
+        // the user whether this session actually extended it.
+        try {
+          const priorEvents = await api.getActivitySince(windowSinceMs(60));
+          preSessionStreakRef.current = currentStreak(priorEvents);
+        } catch {
+          preSessionStreakRef.current = 0;
+        }
+
+        if (deckId && deckId !== 'general') {
+          try {
+            const deck = await api.getDeck(deckId as string);
+            setDeckName(deck?.name);
+          } catch {
+            // non-fatal
+          }
+        }
         const sessionData =
           deckId === 'general'
             ? await api.getGeneralReviewSession()
@@ -72,12 +90,30 @@ export default function Review() {
 
   const checkAnswer = (answer: string) => {
     if (!currentQuestion) return;
-    const isAnswerCorrect = answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
+    const isAnswerCorrect =
+      answer.trim().toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
     setIsCorrect(isAnswerCorrect);
     setShowResult(true);
 
-    if (!isAnswerCorrect) {
-      flipAnimation.value = withTiming(1, { duration: 500 });
+    if (isAnswerCorrect) {
+      setCorrectCount((c) => c + 1);
+    } else {
+      setMissedMap((prev) => {
+        const next = new Map(prev);
+        const key = currentQuestion.correctAnswer;
+        const existing = next.get(key);
+        const translation =
+          (currentQuestion.feedback?.translation as string) ||
+          (currentQuestion as any).prompt ||
+          (currentQuestion as any).word ||
+          '';
+        next.set(key, {
+          word: key,
+          translation,
+          miss: (existing?.miss ?? 0) + 1,
+        });
+        return next;
+      });
     }
   };
 
@@ -106,18 +142,14 @@ export default function Review() {
 
       if (nextIndex < sessionCards.length) {
         setCurrentQuestionIndex(nextIndex);
+        setShowResult(false);
+        setSelectedAnswer('');
+        setTypedAnswer('');
+        setIsCorrect(false);
       } else {
-        Alert.alert('Session Complete!', "You've finished this review session.", [
-          { text: 'OK', onPress: () => router.replace('/(tabs)/learn') },
-        ]);
-        return;
+        endTimeRef.current = Date.now();
+        setCompleted(true);
       }
-
-      setShowResult(false);
-      setSelectedAnswer('');
-      setTypedAnswer('');
-      setIsCorrect(false);
-      flipAnimation.value = 0;
     } catch (error) {
       logger.error('Failed to submit review', { error: String(error) });
       Alert.alert(i18n.t('error'), i18n.t('failedToSaveProgress'));
@@ -125,90 +157,164 @@ export default function Review() {
   };
 
   const getOptionStyle = (optionText: string) => {
-    if (!showResult) {
-      return {};
-    }
-  
-    const isThisTheCorrectAnswer = optionText.toLowerCase() === currentQuestion?.correctAnswer.toLowerCase();
+    if (!showResult) return {};
+    if (!currentQuestion) return {};
+    const isThisTheCorrectAnswer =
+      optionText.toLowerCase() === currentQuestion.correctAnswer.toLowerCase();
     const isThisTheSelectedAnswer = optionText === selectedAnswer;
 
-    if (isThisTheCorrectAnswer) {
-      return styles.correctOption;
-    }
-    if (isThisTheSelectedAnswer && !isThisTheCorrectAnswer) {
-      return styles.wrongOption;
-    }
+    if (isThisTheCorrectAnswer) return styles.correctOption;
+    if (isThisTheSelectedAnswer && !isThisTheCorrectAnswer) return styles.wrongOption;
     return styles.disabledOption;
   };
 
-if (loading) {
+  const missedList = useMemo(() => Array.from(missedMap.values()), [missedMap]);
+
+  if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={AppColors.primary} />
+        <ActivityIndicator size="large" color={Theme.ink} />
       </View>
+    );
+  }
+
+  if (completed) {
+    const duration = (endTimeRef.current ?? Date.now()) - startTimeRef.current;
+    return (
+      <SessionCompleteWithStreak
+        totalQuestions={sessionCards.length}
+        correctCount={correctCount}
+        durationMs={duration}
+        missed={missedList}
+        deckName={deckName}
+        preSessionStreak={preSessionStreakRef.current}
+        onDone={() => router.replace('/(tabs)/learn')}
+        onReviewMore={() => router.replace('/select-deck')}
+      />
     );
   }
 
   if (!currentQuestion) {
     return (
-      <View>
-        <Text>No question available.</Text>
+      <View style={styles.container}>
+        <Text>{i18n.t('noCardsToReview')}</Text>
       </View>
-    )
+    );
   }
 
   const { questionType, options, feedback, ...questionContent } = currentQuestion;
+  const progress = (currentQuestionIndex + (showResult ? 1 : 0)) / sessionCards.length;
+  const isTyped = questionType?.includes('type_answer');
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.header}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.closeBtn}
+          hitSlop={8}
+        >
+          <Ionicons name="close" size={18} color={Theme.ink} />
+        </Pressable>
         <View style={styles.progressBarContainer}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${((currentQuestionIndex + 1) / sessionCards.length) * 100}%` },
-            ]}
-          />
+          <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
         </View>
-        <Animated.Text style={styles.progressText}>
-          {`${i18n.t('card')} ${currentQuestionIndex + 1} ${i18n.t('of')} ${sessionCards.length}`}
-        </Animated.Text>
+        <Text style={styles.progressText}>
+          {currentQuestionIndex + 1} / {sessionCards.length}
+        </Text>
       </View>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View>
-          <Animated.View style={[styles.card, styles.cardFront, frontAnimatedStyle]}>
-            <QuestionDisplay {...questionContent} />
-          </Animated.View>
-          <Animated.View style={[styles.card, styles.cardBack, backAnimatedStyle]}>
-            {feedback && <FeedbackDisplay feedback={feedback} />}
-          </Animated.View>
-        </View>
 
-        {questionType?.includes('_mc') && options && (
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.kicker}>
+          {isTyped ? i18n.t('typeYourAnswer').toUpperCase() : 'TRANSLATE'}
+        </Text>
+
+        {isTyped ? (
+          <>
+            <Text style={styles.typedPrompt}>
+              {(questionContent as any).word || (questionContent as any).prompt || ''}
+            </Text>
+            {(questionContent as any).prompt ? (
+              <Text style={styles.typedMeta}>{(questionContent as any).prompt}</Text>
+            ) : null}
+            <AnswerInput
+              typedAnswer={typedAnswer}
+              setTypedAnswer={setTypedAnswer}
+              showResult={showResult}
+            />
+          </>
+        ) : (
+          <View style={styles.questionCard}>
+            <QuestionDisplay {...(questionContent as any)} />
+          </View>
+        )}
+
+        {!isTyped && options && (
           <AnswerOptions
             options={options}
             showResult={showResult}
+            correctAnswer={currentQuestion.correctAnswer}
+            selectedAnswer={selectedAnswer}
             getOptionStyle={getOptionStyle}
             handleSelectOption={handleSelectOption}
           />
         )}
-
-        {questionType?.includes('type_answer') && (
-          <AnswerInput
-            typedAnswer={typedAnswer}
-            setTypedAnswer={setTypedAnswer}
-            showResult={showResult}
-          />
-        )}
       </ScrollView>
 
-      <ReviewFooter
-        showResult={showResult}
-        isCorrect={isCorrect}
-        questionType={questionType}
-        handleNext={handleNext}
-        handleCheckTypedAnswer={handleCheckTypedAnswer}
-      />
+      {showResult ? (
+        <FeedbackDisplay
+          isCorrect={isCorrect}
+          correctAnswer={currentQuestion.correctAnswer}
+          translation={feedback?.translation}
+          onContinue={handleNext}
+        />
+      ) : (
+        <ReviewFooter
+          questionType={questionType ?? ''}
+          handleCheckTypedAnswer={handleCheckTypedAnswer}
+        />
+      )}
     </View>
+  );
+}
+
+/**
+ * Wraps SessionComplete to fetch the post-session streak. Split out so the
+ * main screen's hook list stays stable across renders.
+ */
+function SessionCompleteWithStreak({
+  preSessionStreak,
+  ...props
+}: Omit<ComponentProps<typeof SessionComplete>, 'streakDays' | 'streakExtended'> & {
+  preSessionStreak: number;
+}) {
+  const [streakDays, setStreakDays] = useState(preSessionStreak);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const recent = await api.getActivitySince(windowSinceMs(60));
+        if (cancelled) return;
+        setStreakDays(currentStreak(recent));
+      } catch (error) {
+        logger.error('Failed to read post-session streak', { error: String(error) });
+      } finally {
+        if (!cancelled) setLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return (
+    <SessionComplete
+      {...props}
+      streakDays={streakDays}
+      streakExtended={loaded && streakDays > preSessionStreak}
+    />
   );
 }

@@ -15,6 +15,10 @@ jest.mock('expo-router', () => {
 jest.mock('@/services/api', () => ({
   api: {
     getUserStats: jest.fn(),
+    getAllDecks: jest.fn(),
+    getMe: jest.fn(),
+    getDueCountsByDeck: jest.fn().mockResolvedValue({}),
+    getActivitySince: jest.fn().mockResolvedValue([]),
   },
 }));
 
@@ -25,9 +29,15 @@ jest.mock('@/services/i18n', () => ({
 describe('LearnScreen Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    (api.getAllDecks as jest.Mock).mockResolvedValue([]);
+    (api.getMe as jest.Mock).mockResolvedValue({
+      _id: 'u1',
+      name: 'Edu',
+      selectedLanguage: 'it',
+    });
   });
 
-  it('navigates to the deck picker when "Browse decks" is pressed', async () => {
+  it('navigates to the deck picker when the primary CTA is pressed', async () => {
     (api.getUserStats as jest.Mock).mockResolvedValue({
       totalWords: 10,
       masteredWords: 0,
@@ -36,13 +46,13 @@ describe('LearnScreen Integration', () => {
 
     const { findByText } = render(<LearnScreen />);
 
-    const browseButton = await findByText('Browse decks');
-    fireEvent.press(browseButton);
+    const cta = await findByText('Begin review');
+    fireEvent.press(cta);
 
     expect(router.push).toHaveBeenCalledWith('/select-deck');
   });
 
-  it('still shows the deck picker entry when the user has no progress yet', async () => {
+  it('still shows the primary CTA when the user has no progress yet', async () => {
     (api.getUserStats as jest.Mock).mockResolvedValue({
       totalWords: 0,
       masteredWords: 0,
@@ -51,6 +61,6 @@ describe('LearnScreen Integration', () => {
 
     const { findByText } = render(<LearnScreen />);
 
-    expect(await findByText('Browse decks')).toBeTruthy();
+    expect(await findByText('Begin review')).toBeTruthy();
   });
 });

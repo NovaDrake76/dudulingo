@@ -1,5 +1,6 @@
 import { Text, View } from 'react-native';
 import { AudioButton } from '../../../components/AudioButton';
+import { Type } from '../../../constants/theme';
 import { CardVisual } from './CardVisual';
 import { styles } from './styles';
 
@@ -27,7 +28,7 @@ export function QuestionDisplay({ prompt, imageUrl, imageKey, emoji, word, lang 
       {prompt && <Text style={styles.questionPrompt}>{prompt}</Text>}
       {word && (
         <View style={styles.wordRow}>
-          <Text style={styles.questionWord}>{word}</Text>
+          <Text style={[styles.questionWord, { fontFamily: Type.serif }]}>{word}</Text>
           <AudioButton text={word} lang={lang} />
         </View>
       )}

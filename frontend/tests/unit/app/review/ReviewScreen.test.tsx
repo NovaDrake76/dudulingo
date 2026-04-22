@@ -10,6 +10,7 @@ jest.mock('expo-router', () => ({
   router: {
     back: jest.fn(),
     replace: jest.fn(),
+    push: jest.fn(),
   },
 }));
 
@@ -17,6 +18,7 @@ jest.mock('@/services/api', () => ({
   api: {
     getGeneralReviewSession: jest.fn(),
     getDeckReviewSession: jest.fn(),
+    getDeck: jest.fn().mockResolvedValue({ _id: 'deck-123', name: 'Cats', cards: [] }),
     submitReview: jest.fn(),
   },
 }));
@@ -95,9 +97,9 @@ describe('ReviewScreen Integration', () => {
 
   it('renders loading state initially', () => {
     (api.getDeckReviewSession as jest.Mock).mockReturnValue(new Promise(() => {}));
-    
+
     const { UNSAFE_getByType } = render(<ReviewScreen />);
-    
+
     expect(UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
   });
 
@@ -125,9 +127,10 @@ describe('ReviewScreen Integration', () => {
     const optionButton = correctOptions[correctOptions.length - 1];
     fireEvent.press(optionButton);
 
-    expect(getByText('next')).toBeTruthy();
-    
-    fireEvent.press(getByText('next'));
+    const continueBtn = getByText('Continue');
+    expect(continueBtn).toBeTruthy();
+
+    fireEvent.press(continueBtn);
 
     await waitFor(() => {
       expect(api.submitReview).toHaveBeenCalledWith('card-1', 'easy');
@@ -142,9 +145,10 @@ describe('ReviewScreen Integration', () => {
     const wrongOption = await findByText('Cão');
     fireEvent.press(wrongOption);
 
-    expect(getByText('next')).toBeTruthy();
+    const continueBtn = getByText('Continue');
+    expect(continueBtn).toBeTruthy();
 
-    fireEvent.press(getByText('next'));
+    fireEvent.press(continueBtn);
 
     await waitFor(() => {
       expect(api.submitReview).toHaveBeenCalledWith('card-1', 'very_hard');
@@ -162,9 +166,10 @@ describe('ReviewScreen Integration', () => {
     const checkButton = await findByText('checkAnswer');
     fireEvent.press(checkButton);
 
-    expect(getByText('next')).toBeTruthy();
+    const continueBtn = getByText('Continue');
+    expect(continueBtn).toBeTruthy();
 
-    fireEvent.press(getByText('next'));
+    fireEvent.press(continueBtn);
 
     await waitFor(() => {
       expect(api.submitReview).toHaveBeenCalledWith('card-2', 'medium');
@@ -180,7 +185,7 @@ describe('ReviewScreen Integration', () => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'allDone',
         'noCardsToReview',
-        expect.any(Array)
+        expect.any(Array),
       );
     });
 
@@ -190,27 +195,18 @@ describe('ReviewScreen Integration', () => {
     expect(router.back).toHaveBeenCalled();
   });
 
-  it('completes the session and navigates to learn screen', async () => {
+  it('shows the session-complete screen and navigates to learn when Done is pressed', async () => {
     (api.getDeckReviewSession as jest.Mock).mockResolvedValue({ cards: [mockCards[0]] });
 
     const { findAllByText, getByText } = render(<ReviewScreen />);
 
     const correctOptions = await findAllByText('Gato');
-    const optionButton = correctOptions[correctOptions.length - 1];
-    fireEvent.press(optionButton);
-    
-    fireEvent.press(getByText('next'));
+    fireEvent.press(correctOptions[correctOptions.length - 1]);
 
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Session Complete!',
-        "You've finished this review session.",
-        expect.any(Array)
-      );
-    });
+    fireEvent.press(getByText('Continue'));
 
-    const alertButtons = (Alert.alert as jest.Mock).mock.calls[0][2];
-    alertButtons[0].onPress();
+    const doneBtn = await waitFor(() => getByText('Done'));
+    fireEvent.press(doneBtn);
 
     expect(router.replace).toHaveBeenCalledWith('/(tabs)/learn');
   });

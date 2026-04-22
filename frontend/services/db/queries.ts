@@ -170,6 +170,114 @@ export async function upsertProgress(
 export async function resetAllProgress(): Promise<void> {
   const db = await getDb();
   await db.runAsync("DELETE FROM user_card_progress");
+  await db.runAsync("DELETE FROM review_events");
+}
+
+// ---------- review events (activity history) ----------
+
+export async function insertReviewEvent(row: {
+  card_id: string;
+  deck_id: string;
+  reviewed_at?: number;
+  rating?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  await db.runAsync(
+    `INSERT INTO review_events (card_id, deck_id, reviewed_at, rating)
+     VALUES (?, ?, ?, ?)`,
+    row.card_id,
+    row.deck_id,
+    row.reviewed_at ?? Date.now(),
+    row.rating ?? null,
+  );
+}
+
+export async function listReviewEventsSince(
+  sinceMs: number,
+): Promise<{ reviewed_at: number; rating: string | null }[]> {
+  const db = await getDb();
+  return db.getAllAsync<{ reviewed_at: number; rating: string | null }>(
+    `SELECT reviewed_at, rating FROM review_events
+      WHERE reviewed_at >= ? ORDER BY reviewed_at ASC`,
+    sinceMs,
+  );
+}
+
+export async function countReviewEvents(): Promise<number> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ n: number }>(
+    "SELECT COUNT(*) AS n FROM review_events",
+  );
+  return row?.n ?? 0;
+}
+
+export async function listDueCountsByDeck(
+  now: number = Date.now(),
+): Promise<{ deck_id: string; n: number }[]> {
+  const db = await getDb();
+  return db.getAllAsync<{ deck_id: string; n: number }>(
+    `SELECT deck_id, COUNT(*) AS n
+       FROM user_card_progress
+      WHERE next_review_at <= ?
+      GROUP BY deck_id`,
+    now,
+  );
+}
+
+/**
+ * Per-deck touched/mastered counts. A card is "mastered" when repetitions >= 5
+ * (matches MASTERY_THRESHOLD in api.ts).
+ */
+export async function listDeckProgressMap(): Promise<
+  Record<string, { touched: number; mastered: number }>
+> {
+  const db = await getDb();
+  const rows = await db.getAllAsync<{ deck_id: string; touched: number; mastered: number }>(
+    `SELECT deck_id,
+            COUNT(*) AS touched,
+            SUM(CASE WHEN repetitions >= 5 THEN 1 ELSE 0 END) AS mastered
+       FROM user_card_progress
+      GROUP BY deck_id`,
+  );
+  const out: Record<string, { touched: number; mastered: number }> = {};
+  for (const r of rows) out[r.deck_id] = { touched: r.touched, mastered: r.mastered };
+  return out;
+}
+
+/**
+ * How many packs (decks) and cards exist for each language with bundled content.
+ * Used by the language-picker to show accurate "N packs · M cards" lines.
+ */
+export async function listLanguageInventory(): Promise<
+  { lang: string; packCount: number; cardCount: number }[]
+> {
+  const db = await getDb();
+  const deckRows = await db.getAllAsync<{ lang: string | null; n: number }>(
+    `SELECT lang, COUNT(*) AS n FROM decks WHERE lang IS NOT NULL GROUP BY lang`,
+  );
+  const cardRows = await db.getAllAsync<{ lang: string | null; n: number }>(
+    `SELECT lang, COUNT(*) AS n FROM cards WHERE lang IS NOT NULL GROUP BY lang`,
+  );
+  const cards = new Map<string, number>();
+  for (const r of cardRows) if (r.lang) cards.set(r.lang, r.n);
+  return deckRows
+    .filter((r) => r.lang)
+    .map((r) => ({
+      lang: r.lang as string,
+      packCount: r.n,
+      cardCount: cards.get(r.lang as string) ?? 0,
+    }));
+}
+
+/**
+ * Earliest review event — used for "since Apr 2026" copy on the profile.
+ */
+export async function getFirstReviewAt(): Promise<number | null> {
+  const db = await getDb();
+  const row = await db.getFirstAsync<{ first: number | null }>(
+    `SELECT MIN(reviewed_at) AS first FROM review_events`,
+  );
+  return row?.first ?? null;
 }
 
 // ---------- session building ----------

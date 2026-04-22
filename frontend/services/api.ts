@@ -1,16 +1,23 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
+  countReviewEvents,
   deleteDecksForLang,
   getCardById,
   getDeckById,
+  getFirstReviewAt,
   getProgress,
   getUserStats,
+  insertReviewEvent,
   listCardsInDeck,
   listCardsInDeckWithProgress,
+  listDeckProgressMap,
   listDecksWithCardCount,
+  listDueCountsByDeck,
   listDueProgress,
+  listLanguageInventory,
   listLearningProgress,
   listNewCardsInLang,
+  listReviewEventsSince,
   resetAllProgress,
   upsertProgress,
 } from "./db/queries";
@@ -230,6 +237,7 @@ export const api = {
       rating as Rating,
     );
 
+    const now = Date.now();
     await upsertProgress({
       card_id: cardId,
       deck_id: card.deck_id,
@@ -237,11 +245,45 @@ export const api = {
       interval,
       repetitions,
       next_review_at: nextReviewAt.getTime(),
-      updated_at: Date.now(),
+      updated_at: now,
       synced_at: null, // dirty for future sync
+    });
+    await insertReviewEvent({
+      card_id: cardId,
+      deck_id: card.deck_id,
+      reviewed_at: now,
+      rating,
     });
 
     return { message: "Progress updated successfully" };
+  },
+
+  // ---------- activity / history ----------
+  async getActivitySince(sinceMs: number) {
+    return listReviewEventsSince(sinceMs);
+  },
+
+  async getReviewCount() {
+    return countReviewEvents();
+  },
+
+  async getDueCountsByDeck() {
+    const rows = await listDueCountsByDeck();
+    const map: Record<string, number> = {};
+    for (const r of rows) map[r.deck_id] = r.n;
+    return map;
+  },
+
+  async getDeckProgressMap() {
+    return listDeckProgressMap();
+  },
+
+  async getLanguageInventory() {
+    return listLanguageInventory();
+  },
+
+  async getFirstReviewAt() {
+    return getFirstReviewAt();
   },
 
   // ---------- admin / maintenance ----------

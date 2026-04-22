@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { AppColors } from '../constants/theme';
+import { Theme } from '../constants/theme';
 
 type Target = '/(tabs)/learn' | '/auth/select-language';
 
@@ -23,7 +23,7 @@ export default function Index() {
   if (!target) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={AppColors.primary} />
+        <ActivityIndicator size="large" color={Theme.ink} />
       </View>
     );
   }
@@ -36,6 +36,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: AppColors.background,
+    backgroundColor: Theme.paper,
   },
 });

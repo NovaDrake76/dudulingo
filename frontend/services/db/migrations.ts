@@ -8,6 +8,25 @@ export interface Migration {
 
 export const MIGRATIONS: Migration[] = [
   {
+    version: 4,
+    name: "add-review-events",
+    up: `
+      CREATE TABLE IF NOT EXISTS review_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        card_id TEXT NOT NULL,
+        deck_id TEXT NOT NULL,
+        reviewed_at INTEGER NOT NULL,
+        rating TEXT
+      );
+      CREATE INDEX IF NOT EXISTS idx_review_events_at ON review_events(reviewed_at);
+      CREATE INDEX IF NOT EXISTS idx_review_events_deck ON review_events(deck_id, reviewed_at);
+
+      INSERT INTO review_events (card_id, deck_id, reviewed_at, rating)
+      SELECT card_id, deck_id, updated_at, NULL
+      FROM user_card_progress;
+    `,
+  },
+  {
     version: 3,
     name: "add-image-key-to-cards",
     up: `ALTER TABLE cards ADD COLUMN image_key TEXT;`,
